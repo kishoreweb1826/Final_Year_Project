@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Tools - OrganicFarm</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top"
+    >
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <i class="fas fa-leaf text-success"></i>
+          <span class="fw-bold text-success">OrganicFarm</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="products.html">Products</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="farmers.html">For Farmers</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="ai-tools.html">AI Tools</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="about.html">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="contact.html">Contact</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="login.html"
+                ><i class="fas fa-user"></i> Login</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <h1 class="display-5 fw-bold">AI-Powered Farming Tools</h1>
+        <p class="lead">
+          Leverage artificial intelligence to optimize your farming operations
+        </p>
+      </div>
+    </section>
+
+    <!-- Tools Navigation -->
+    <section class="py-4 bg-white border-bottom">
+      <div class="container">
+        <ul
+          class="nav nav-pills justify-content-center"
+          id="toolsTabs"
+          role="tablist"
+        >
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="crop-tab"
+              data-bs-toggle="pill"
+              data-bs-target="#crop"
+              type="button"
+            >
+              <i class="fas fa-seedling"></i> Crop Recommendation
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="resource-tab"
+              data-bs-toggle="pill"
+              data-bs-target="#resource"
+              type="button"
+            >
+              <i class="fas fa-tint"></i> Resource Management
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="weather-tab"
+              data-bs-toggle="pill"
+              data-bs-target="#weather"
+              type="button"
+            >
+              <i class="fas fa-cloud-sun"></i> Weather Forecast
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="soil-tab"
+              data-bs-toggle="pill"
+              data-bs-target="#soil"
+              type="button"
+            >
+              <i class="fas fa-mountain"></i> Soil Analysis
+            </button>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Tools Content -->
+    <section class="py-5">
+      <div class="container">
+        <div class="tab-content" id="toolsTabContent">
+          <!-- Crop Recommendation Tool -->
+          <div class="tab-pane fade show active" id="crop" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <div class="tool-container">
+                  <h3 class="mb-4">
+                    <i class="fas fa-seedling text-success"></i> Crop
+                    Recommendation System
+                  </h3>
+                  <p class="text-muted mb-4">
+                    Enter your soil and environmental parameters to get
+                    AI-powered crop recommendations
+                  </p>
+
+                  <form id="cropRecommendationForm">
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label"
+                          >Nitrogen (N) Content (kg/ha)</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="nitrogen"
+                          placeholder="0-100"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label"
+                          >Phosphorus (P) Content (kg/ha)</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="phosphorus"
+                          placeholder="0-100"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label"
+                          >Potassium (K) Content (kg/ha)</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="potassium"
+                          placeholder="0-100"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Temperature (°C)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="temperature"
+                          placeholder="0-50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Humidity (%)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="humidity"
+                          placeholder="0-100"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">pH Value</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          class="form-control"
+                          id="ph"
+                          placeholder="0-14"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Rainfall (mm)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="rainfall"
+                          placeholder="0-500"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Location/Region</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="location"
+                          placeholder="Enter location"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-lg w-100 mt-3"
+                    >
+                      <i class="fas fa-magic"></i> Get Recommendations
+                    </button>
+                  </form>
+
+                  <!-- Results -->
+                  <div id="cropResults" class="mt-4" style="display: none">
+                    <div class="prediction-result">
+                      <h5>
+                        <i class="fas fa-check-circle text-success"></i>
+                        Recommended Crops
+                      </h5>
+                      <div id="recommendedCrops"></div>
+                    </div>
+                  </div>
+
+                  <!-- Loading Spinner -->
+                  <div
+                    class="text-center mt-4"
+                    id="cropLoading"
+                    style="display: none"
+                  >
+                    <div
+                      class="spinner-border text-success spinner-border-custom"
+                      role="status"
+                    >
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Analyzing your data...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resource Management Tool -->
+          <div class="tab-pane fade" id="resource" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <div class="tool-container">
+                  <h3 class="mb-4">
+                    <i class="fas fa-tint text-success"></i> Resource Management
+                    System
+                  </h3>
+                  <p class="text-muted mb-4">
+                    Optimize water, fertilizer, and other resource usage for
+                    your crops
+                  </p>
+
+                  <form id="resourceManagementForm">
+                    <div class="mb-3">
+                      <label class="form-label">Select Crop</label>
+                      <select class="form-select" id="cropType" required>
+                        <option value="">Choose crop...</option>
+                        <option value="rice">Rice</option>
+                        <option value="wheat">Wheat</option>
+                        <option value="maize">Maize</option>
+                        <option value="cotton">Cotton</option>
+                        <option value="sugarcane">Sugarcane</option>
+                        <option value="vegetables">Vegetables</option>
+                      </select>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Farm Area (acres)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="farmArea"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Growth Stage</label>
+                        <select class="form-select" id="growthStage" required>
+                          <option value="">Select stage...</option>
+                          <option value="germination">Germination</option>
+                          <option value="vegetative">Vegetative</option>
+                          <option value="flowering">Flowering</option>
+                          <option value="maturation">Maturation</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Soil Moisture (%)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="soilMoisture"
+                          placeholder="0-100"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label"
+                          >Days Since Last Irrigation</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="daysSinceIrrigation"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Irrigation Method</label>
+                      <select class="form-select" id="irrigationMethod">
+                        <option value="drip">Drip Irrigation</option>
+                        <option value="sprinkler">Sprinkler</option>
+                        <option value="flood">Flood Irrigation</option>
+                        <option value="furrow">Furrow Irrigation</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-lg w-100 mt-3"
+                    >
+                      <i class="fas fa-calculator"></i> Calculate Resources
+                    </button>
+                  </form>
+
+                  <!-- Results -->
+                  <div id="resourceResults" class="mt-4" style="display: none">
+                    <div class="prediction-result">
+                      <h5>
+                        <i class="fas fa-chart-bar text-success"></i> Resource
+                        Recommendations
+                      </h5>
+                      <div id="resourceRecommendations"></div>
+                    </div>
+                  </div>
+
+                  <!-- Loading -->
+                  <div
+                    class="text-center mt-4"
+                    id="resourceLoading"
+                    style="display: none"
+                  >
+                    <div
+                      class="spinner-border text-success spinner-border-custom"
+                      role="status"
+                    >
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Calculating optimal resources...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weather Forecast Tool -->
+          <div class="tab-pane fade" id="weather" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <div class="tool-container">
+                  <h3 class="mb-4">
+                    <i class="fas fa-cloud-sun text-success"></i> Weather
+                    Forecast
+                  </h3>
+                  <p class="text-muted mb-4">
+                    Get 7-day weather forecast for your farm location
+                  </p>
+
+                  <form id="weatherForm">
+                    <div class="row mb-3">
+                      <div class="col-md-8">
+                        <label class="form-label">Enter Location</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="weatherLocation"
+                          placeholder="City, State"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-success w-100">
+                          <i class="fas fa-search"></i> Get Forecast
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  <div id="weatherResults" class="mt-4" style="display: none">
+                    <div class="row g-3" id="weatherCards">
+                      <!-- Weather cards will be inserted here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Soil Analysis Tool -->
+          <div class="tab-pane fade" id="soil" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <div class="tool-container">
+                  <h3 class="mb-4">
+                    <i class="fas fa-mountain text-success"></i> Soil Health
+                    Analysis
+                  </h3>
+                  <p class="text-muted mb-4">
+                    Analyze your soil health and get improvement recommendations
+                  </p>
+
+                  <form id="soilAnalysisForm">
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Soil Type</label>
+                        <select class="form-select" id="soilType" required>
+                          <option value="">Select type...</option>
+                          <option value="clay">Clay</option>
+                          <option value="sandy">Sandy</option>
+                          <option value="loamy">Loamy</option>
+                          <option value="silt">Silt</option>
+                          <option value="peaty">Peaty</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Organic Matter (%)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="organicMatter"
+                          placeholder="0-10"
+                          step="0.1"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label">pH Level</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="soilPh"
+                          placeholder="0-14"
+                          step="0.1"
+                          required
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">EC (dS/m)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="ec"
+                          placeholder="Electrical Conductivity"
+                          step="0.1"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">CEC (meq/100g)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="cec"
+                          placeholder="Cation Exchange"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label"
+                        >Current Crop/Previous Crop</label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="previousCrop"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-lg w-100 mt-3"
+                    >
+                      <i class="fas fa-microscope"></i> Analyze Soil
+                    </button>
+                  </form>
+
+                  <div id="soilResults" class="mt-4" style="display: none">
+                    <div class="prediction-result">
+                      <h5>
+                        <i class="fas fa-heartbeat text-success"></i> Soil
+                        Health Report
+                      </h5>
+                      <div id="soilRecommendations"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Information Section -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">How Our AI Tools Help You</h2>
+        <div class="row g-4">
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="feature-icon mb-3">
+                <i class="fas fa-brain fa-3x text-success"></i>
+              </div>
+              <h5>Machine Learning</h5>
+              <p class="text-muted">
+                Advanced algorithms trained on thousands of farm datasets
+              </p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="feature-icon mb-3">
+                <i class="fas fa-database fa-3x text-success"></i>
+              </div>
+              <h5>Big Data</h5>
+              <p class="text-muted">
+                Insights from millions of agricultural data points
+              </p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="feature-icon mb-3">
+                <i class="fas fa-sync fa-3x text-success"></i>
+              </div>
+              <h5>Real-time Updates</h5>
+              <p class="text-muted">
+                Continuously updated with latest agricultural research
+              </p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="feature-icon mb-3">
+                <i class="fas fa-shield-alt fa-3x text-success"></i>
+              </div>
+              <h5>Accurate Results</h5>
+              <p class="text-muted">
+                95%+ accuracy in predictions and recommendations
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <h5><i class="fas fa-leaf"></i> OrganicFarm</h5>
+            <p class="text-muted">AI-powered platform for organic farming</p>
+          </div>
+          <div class="col-md-2 mb-4">
+            <h6>Quick Links</h6>
+            <ul class="list-unstyled">
+              <li><a href="products.html" class="text-muted">Products</a></li>
+              <li><a href="farmers.html" class="text-muted">For Farmers</a></li>
+              <li><a href="ai-tools.html" class="text-muted">AI Tools</a></li>
+            </ul>
+          </div>
+          <div class="col-md-3 mb-4">
+            <h6>Support</h6>
+            <ul class="list-unstyled">
+              <li><a href="contact.html" class="text-muted">Contact Us</a></li>
+              <li><a href="#" class="text-muted">FAQs</a></li>
+            </ul>
+          </div>
+          <div class="col-md-3 mb-4">
+            <h6>Contact</h6>
+            <ul class="list-unstyled text-muted">
+              <li><i class="fas fa-phone"></i> +91 12345 67890</li>
+              <li><i class="fas fa-envelope"></i> info@organicfarm.com</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/ai-tools.js"></script>
+  </body>
+</html>

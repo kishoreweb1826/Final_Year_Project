@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - OrganicFarm</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top"
+    >
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <i class="fas fa-leaf text-success"></i>
+          <span class="fw-bold text-success">OrganicFarm</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="products.html">Products</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="contact.html">Contact</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Login/Register Section -->
+    <section class="auth-container">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-10">
+            <div class="auth-card">
+              <div class="row g-0">
+                <!-- Login Form -->
+                <div class="col-md-6 p-5" id="loginSection">
+                  <h2 class="mb-4">Welcome Back</h2>
+                  <p class="text-muted mb-4">Login to your account</p>
+
+                  <form id="loginForm">
+                    <div class="mb-3">
+                      <label for="loginEmail" class="form-label"
+                        >Email Address</label
+                      >
+                      <input
+                        type="email"
+                        class="form-control"
+                        id="loginEmail"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="loginPassword" class="form-label"
+                        >Password</label
+                      >
+                      <input
+                        type="password"
+                        class="form-control"
+                        id="loginPassword"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 form-check">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        id="rememberMe"
+                      />
+                      <label class="form-check-label" for="rememberMe"
+                        >Remember me</label
+                      >
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 mb-3">
+                      <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <div class="text-center">
+                      <a href="#" class="text-success">Forgot Password?</a>
+                    </div>
+                  </form>
+
+                  <hr class="my-4" />
+
+                  <div class="text-center">
+                    <p class="mb-0">Don't have an account?</p>
+                    <button
+                      class="btn btn-outline-success mt-2"
+                      id="showRegister"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+
+                  <!-- Social Login -->
+                  <div class="mt-4">
+                    <p class="text-center text-muted mb-3">Or continue with</p>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-outline-dark">
+                        <i class="fab fa-google"></i> Continue with Google
+                      </button>
+                      <button class="btn btn-outline-primary">
+                        <i class="fab fa-facebook"></i> Continue with Facebook
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Register Form -->
+                <div class="col-md-6 p-5 bg-light" id="registerSection">
+                  <h2 class="mb-4">Create Account</h2>
+                  <p class="text-muted mb-4">Join OrganicFarm today</p>
+
+                  <form id="registerForm">
+                    <div class="mb-3">
+                      <label for="registerName" class="form-label"
+                        >Full Name</label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="registerName"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="registerEmail" class="form-label"
+                        >Email Address</label
+                      >
+                      <input
+                        type="email"
+                        class="form-control"
+                        id="registerEmail"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="registerPhone" class="form-label"
+                        >Phone Number</label
+                      >
+                      <input
+                        type="tel"
+                        class="form-control"
+                        id="registerPhone"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="registerPassword" class="form-label"
+                        >Password</label
+                      >
+                      <input
+                        type="password"
+                        class="form-control"
+                        id="registerPassword"
+                        required
+                      />
+                      <small class="text-muted">Minimum 8 characters</small>
+                    </div>
+                    <div class="mb-3">
+                      <label for="confirmPassword" class="form-label"
+                        >Confirm Password</label
+                      >
+                      <input
+                        type="password"
+                        class="form-control"
+                        id="confirmPassword"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="userType" class="form-label">I am a</label>
+                      <select class="form-select" id="userType" required>
+                        <option value="">Select...</option>
+                        <option value="customer">Customer</option>
+                        <option value="farmer">Farmer</option>
+                      </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        id="agreeTerms"
+                        required
+                      />
+                      <label class="form-check-label" for="agreeTerms">
+                        I agree to
+                        <a href="#" class="text-success">Terms & Conditions</a>
+                      </label>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                      <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                  </form>
+
+                  <hr class="my-4" />
+
+                  <div class="text-center">
+                    <p class="mb-0">Already have an account?</p>
+                    <button class="btn btn-outline-success mt-2" id="showLogin">
+                      Login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Farmer Registration Link -->
+            <div class="text-center mt-4">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Are you a farmer with organic certification?
+                <a href="farmers.html" class="alert-link fw-bold"
+                  >Register here for special benefits</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+  </body>
+</html>

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products - OrganicFarm</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top"
+    >
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <i class="fas fa-leaf text-success"></i>
+          <span class="fw-bold text-success">OrganicFarm</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="products.html">Products</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="farmers.html">For Farmers</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="ai-tools.html">AI Tools</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="about.html">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="contact.html">Contact</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="login.html"
+                ><i class="fas fa-user"></i> Login</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="cart.html"
+                ><i class="fas fa-shopping-cart"></i>
+                <span class="badge bg-success" id="cartCount">0</span></a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <h1 class="display-5 fw-bold">Organic Products</h1>
+        <p class="lead">
+          Fresh, certified organic produce from verified farmers
+        </p>
+      </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="row">
+          <!-- Filters Sidebar -->
+          <div class="col-lg-3 mb-4">
+            <div class="card">
+              <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+              </div>
+              <div class="card-body">
+                <!-- Category Filter -->
+                <h6 class="fw-bold mb-3">Category</h6>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="vegetables"
+                    value="vegetables"
+                  />
+                  <label class="form-check-label" for="vegetables"
+                    >Vegetables</label
+                  >
+                </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="fruits"
+                    value="fruits"
+                  />
+                  <label class="form-check-label" for="fruits">Fruits</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="grains"
+                    value="grains"
+                  />
+                  <label class="form-check-label" for="grains">Grains</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="dairy"
+                    value="dairy"
+                  />
+                  <label class="form-check-label" for="dairy">Dairy</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="herbs"
+                    value="herbs"
+                  />
+                  <label class="form-check-label" for="herbs"
+                    >Herbs & Spices</label
+                  >
+                </div>
+
+                <hr />
+
+                <!-- Price Range -->
+                <h6 class="fw-bold mb-3">Price Range</h6>
+                <div class="mb-3">
+                  <label for="priceRange" class="form-label"
+                    >Up to ₹<span id="priceValue">500</span></label
+                  >
+                  <input
+                    type="range"
+                    class="form-range"
+                    id="priceRange"
+                    min="0"
+                    max="1000"
+                    value="500"
+                  />
+                </div>
+
+                <hr />
+
+                <!-- Rating Filter -->
+                <h6 class="fw-bold mb-3">Rating</h6>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="rating"
+                    id="rating4"
+                    value="4"
+                  />
+                  <label class="form-check-label" for="rating4">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    & above
+                  </label>
+                </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="rating"
+                    id="rating3"
+                    value="3"
+                  />
+                  <label class="form-check-label" for="rating3">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    & above
+                  </label>
+                </div>
+
+                <button class="btn btn-success w-100 mt-3" id="applyFilters">
+                  Apply Filters
+                </button>
+                <button
+                  class="btn btn-outline-secondary w-100 mt-2"
+                  id="clearFilters"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Grid -->
+          <div class="col-lg-9">
+            <!-- Search and Sort -->
+            <div class="row mb-4">
+              <div class="col-md-8">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="searchProduct"
+                    placeholder="Search products..."
+                  />
+                  <button class="btn btn-success" type="button">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <select class="form-select" id="sortProducts">
+                  <option value="featured">Sort by: Featured</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="newest">Newest First</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="row g-4" id="productsGrid">
+              <!-- Products will be loaded dynamically -->
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Products pagination" class="mt-5">
+              <ul class="pagination justify-content-center" id="pagination">
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                <li class="page-item active">
+                  <a class="page-link" href="#">1</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="#">Next</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <h5><i class="fas fa-leaf"></i> OrganicFarm</h5>
+            <p class="text-muted">
+              Connecting certified organic farmers with conscious consumers for
+              a healthier tomorrow.
+            </p>
+          </div>
+          <div class="col-md-2 mb-4">
+            <h6>Quick Links</h6>
+            <ul class="list-unstyled">
+              <li><a href="products.html" class="text-muted">Products</a></li>
+              <li><a href="farmers.html" class="text-muted">For Farmers</a></li>
+              <li><a href="ai-tools.html" class="text-muted">AI Tools</a></li>
+              <li><a href="about.html" class="text-muted">About Us</a></li>
+            </ul>
+          </div>
+          <div class="col-md-3 mb-4">
+            <h6>Support</h6>
+            <ul class="list-unstyled">
+              <li><a href="contact.html" class="text-muted">Contact Us</a></li>
+              <li><a href="#" class="text-muted">FAQs</a></li>
+              <li><a href="#" class="text-muted">Shipping Policy</a></li>
+            </ul>
+          </div>
+          <div class="col-md-3 mb-4">
+            <h6>Contact</h6>
+            <ul class="list-unstyled text-muted">
+              <li><i class="fas fa-phone"></i> +91 12345 67890</li>
+              <li><i class="fas fa-envelope"></i> info@organicfarm.com</li>
+            </ul>
+          </div>
+        </div>
+        <hr class="bg-secondary" />
+        <div class="text-center text-muted">
+          <p>&copy; 2026 OrganicFarm. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/products.js"></script>
+  </body>
+</html>
