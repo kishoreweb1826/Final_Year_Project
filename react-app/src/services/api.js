@@ -1,0 +1,176 @@
+/**
+ * API Service — centralises all HTTP calls to the Spring Boot backend.
+ *
+ * When served from Spring Boot (port 8080): uses relative '/api' path
+ * When running on Vite dev server (port 5173): uses absolute 'http://localhost:8080/api'
+ */
+
+const BASE_URL = window.location.port === '5173'
+    ? 'http://localhost:8080/api'   // Vite dev server → backend on 8080
+    : '/api';                        // Served BY Spring Boot → same origin
+
+
+/** Get the stored JWT token from localStorage or sessionStorage */
+function getToken() {
+    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
+/** Build standard fetch options with JSON body + auth header */
+function options(method = 'GET', body = null) {
+    const token = getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+    };
+}
+
+/** Helper — throws a friendly error from an API response */
+async function handleResponse(res) {
+    if (res.ok) {
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
+    }
+    let errorMsg = `Error ${res.status}`;
+    try {
+        const err = await res.json();
+        errorMsg = err.message || errorMsg;
+    } catch { /* ignore parse errors */ }
+    throw new Error(errorMsg);
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════
+export const authApi = {
+    login: (email, password, rememberMe = false) =>
+        fetch(`${BASE_URL}/auth/login`, options('POST', { email, password, rememberMe }))
+            .then(handleResponse),
+
+    register: (name, email, phone, password, confirmPassword, userType) =>
+        fetch(`${BASE_URL}/auth/register`, options('POST', { name, email, phone, password, confirmPassword, userType }))
+            .then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  PRODUCTS
+// ═══════════════════════════════════════════════════════
+export const productApi = {
+    getAll: ({ search = '', category = '', sort = 'newest', page = 0, size = 50 } = {}) => {
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (category && category !== 'all') params.set('category', category);
+        if (sort) params.set('sort', sort);
+        params.set('page', page);
+        params.set('size', size);
+        return fetch(`${BASE_URL}/products?${params}`, options('GET')).then(handleResponse);
+    },
+
+    getById: (id) =>
+        fetch(`${BASE_URL}/products/${id}`, options('GET')).then(handleResponse),
+
+    create: (product) =>
+        fetch(`${BASE_URL}/products`, options('POST', {
+            name: product.name,
+            price: product.price,
+            category: (product.category || 'OTHER').toUpperCase(),
+            imageUrl: product.image,
+            rating: product.rating || 0,
+            description: product.desc,
+            farmerName: product.farmer,
+            certified: product.certified ?? true,
+        })).then(handleResponse),
+
+    update: (id, product) =>
+        fetch(`${BASE_URL}/products/${id}`, options('PUT', {
+            name: product.name,
+            price: product.price,
+            category: (product.category || 'OTHER').toUpperCase(),
+            imageUrl: product.image,
+            rating: product.rating || 0,
+            description: product.desc,
+            farmerName: product.farmer,
+            certified: product.certified ?? true,
+        })).then(handleResponse),
+
+    delete: (id) =>
+        fetch(`${BASE_URL}/products/${id}`, options('DELETE')).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  ORDERS
+// ═══════════════════════════════════════════════════════
+export const orderApi = {
+    place: (orderData) =>
+        fetch(`${BASE_URL}/orders`, options('POST', orderData)).then(handleResponse),
+
+    getMyOrders: (page = 0, size = 10) =>
+        fetch(`${BASE_URL}/orders?page=${page}&size=${size}`, options('GET')).then(handleResponse),
+
+    getById: (id) =>
+        fetch(`${BASE_URL}/orders/${id}`, options('GET')).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  FARMER REGISTRATION
+// ═══════════════════════════════════════════════════════
+export const farmerApi = {
+    register: (formData, certificateFile) => {
+        const token = getToken();
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const multipart = new FormData();
+        multipart.append('data', new Blob([JSON.stringify(formData)], { type: 'application/json' }));
+        if (certificateFile) multipart.append('certificate', certificateFile);
+
+        return fetch(`${BASE_URL}/farmers/register`, { method: 'POST', headers, body: multipart })
+            .then(handleResponse);
+    },
+
+    getStatus: (id) =>
+        fetch(`${BASE_URL}/farmers/registration/${id}`, options('GET')).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  CONTACT
+// ═══════════════════════════════════════════════════════
+export const contactApi = {
+    send: (formData) =>
+        fetch(`${BASE_URL}/contact`, options('POST', formData)).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  AI TOOLS
+// ═══════════════════════════════════════════════════════
+export const aiApi = {
+    cropRecommendation: (data) =>
+        fetch(`${BASE_URL}/ai-tools/crop-recommendation`, options('POST', data)).then(handleResponse),
+
+    resourceManagement: (data) =>
+        fetch(`${BASE_URL}/ai-tools/resource-management`, options('POST', data)).then(handleResponse),
+
+    weatherForecast: (location) =>
+        fetch(`${BASE_URL}/ai-tools/weather-forecast`, options('POST', { location })).then(handleResponse),
+
+    soilAnalysis: (data) =>
+        fetch(`${BASE_URL}/ai-tools/soil-analysis`, options('POST', data)).then(handleResponse),
+};
+
+/** Normalise a backend Product response to the shape the UI expects */
+export function normaliseProduct(p) {
+    return {
+        id: p.id,
+        name: p.name,
+        price: typeof p.price === 'object' ? Number(p.price) : p.price,
+        category: (p.category || '').toLowerCase(),
+        image: p.imageUrl,
+        rating: typeof p.rating === 'object' ? Number(p.rating) : (p.rating || 0),
+        desc: p.description,
+        farmer: p.farmerName,
+        certified: p.certified,
+        _created: new Date(p.createdAt).getTime(),
+    };
+}
