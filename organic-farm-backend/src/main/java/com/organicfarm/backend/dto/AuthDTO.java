@@ -4,7 +4,9 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 /**
- * Request body DTOs for authentication endpoints
+ * Request body DTOs for authentication endpoints.
+ * AuthResponse now includes emailVerified so the frontend
+ * can redirect to OTP screen immediately after registration.
  */
 public class AuthDTO {
 
@@ -54,13 +56,16 @@ public class AuthDTO {
         private String name;
         private String email;
         private String role;
+        private boolean emailVerified;
 
-        public AuthResponse(String token, Long id, String name, String email, String role) {
+        public AuthResponse(String token, Long id, String name, String email,
+                            String role, boolean emailVerified) {
             this.token = token;
             this.id = id;
             this.name = name;
             this.email = email;
             this.role = role;
+            this.emailVerified = emailVerified;
         }
     }
 }

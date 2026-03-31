@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { authApi, productApi, orderApi, normaliseProduct } from '../services/api';
+import { authApi, productApi, orderApi, normaliseProduct, verificationApi } from '../services/api';
 
 const AppContext = createContext(null);
 
@@ -164,7 +164,7 @@ export function AppProvider({ children }) {
             // Products
             getProducts, saveProducts, addProduct, updateProduct, deleteProduct,
             // Raw API access for pages
-            authApi, orderApi,
+            authApi, orderApi, verificationApi,
         }}>
             {children}
         </AppContext.Provider>

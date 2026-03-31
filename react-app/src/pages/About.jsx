@@ -4,7 +4,7 @@ export default function About() {
     return (
         <>
             <div className="page-header">
-                <div className="container">
+                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <h1>About OrganicFarm</h1>
                     <p>Bridging the gap between organic farmers and conscious consumers</p>
                 </div>
@@ -157,8 +157,8 @@ export default function About() {
             </section>
 
             {/* CTA */}
-            <section style={{ background: 'var(--gradient-primary)', color: 'white', padding: '5rem 0', textAlign: 'center' }}>
-                <div className="container">
+            <section style={{ background: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', color: 'white', padding: '5rem 0', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <h2 style={{ fontWeight: 800, marginBottom: '1rem', color: 'white' }}>Join the Organic Revolution</h2>
                     <p style={{ opacity: 0.9, marginBottom: '2rem', fontSize: '1.1rem' }}>Whether you're a farmer or a consumer seeking authentic organic products, we're here to help.</p>
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>

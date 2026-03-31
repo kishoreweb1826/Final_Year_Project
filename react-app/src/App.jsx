@@ -7,6 +7,9 @@ import Notifications from './components/Notifications';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderSuccess from './pages/OrderSuccess';
+import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Farmers from './pages/Farmers';
 import AITools from './pages/AITools';
@@ -55,6 +58,9 @@ export default function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/products" element={<Products />} />
                             <Route path="/cart" element={<Cart />} />
+                            <Route path="/checkout" element={<Checkout />} />
+                            <Route path="/order-success" element={<OrderSuccess />} />
+                            <Route path="/orders" element={<Orders />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/farmers" element={<Farmers />} />
                             <Route path="/ai-tools" element={<AITools />} />

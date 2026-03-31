@@ -93,6 +93,9 @@ public class SecurityConfig {
                                 "/home",
                                 "/products",
                                 "/cart",
+                                "/checkout",
+                                "/order-success",
+                                "/orders",
                                 "/login",
                                 "/farmers",
                                 "/ai-tools",
@@ -102,6 +105,7 @@ public class SecurityConfig {
 
                         // ── Public REST API endpoints ─────────────────────────
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/verification/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers("/api/ai-tools/**").permitAll()
                         .requestMatchers("/api/contact").permitAll()

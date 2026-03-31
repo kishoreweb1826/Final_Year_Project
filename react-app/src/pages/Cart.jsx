@@ -1,32 +1,30 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 const FREE_DELIVERY = 500;
 const DELIVERY_CHARGE = 40;
-const PROMO_CODES = { ORGANIC10: 0.1, FIRST20: 0.2, SAVE50: 50 };
+// These are for PREVIEW only; the server always recomputes the actual discount
+const PROMO_PREVIEW = { ORGANIC10: 0.1, FIRST20: 0.2, SAVE50: 50 };
 
 export default function Cart() {
-    const { cart, removeFromCart, updateQuantity, clearCart, showNotification } = useApp();
+    const navigate = useNavigate();
+    const { cart, removeFromCart, updateQuantity, clearCart, showNotification, user, addToCart } = useApp();
     const [promoInput, setPromoInput] = useState('');
     const [appliedPromo, setAppliedPromo] = useState('');
     const [promoMsg, setPromoMsg] = useState('');
-    const [checkoutOpen, setCheckoutOpen] = useState(false);
-    const [successOpen, setSuccessOpen] = useState(false);
-    const [orderId, setOrderId] = useState('');
-    const [processing, setProcessing] = useState(false);
-    const [checkoutForm, setCheckoutForm] = useState({ name: '', address: '', city: '', phone: '', payment: 'cod' });
 
     const subtotal = cart.reduce((t, i) => t + i.price * i.quantity, 0);
     const delivery = subtotal >= FREE_DELIVERY ? 0 : DELIVERY_CHARGE;
     const discount = appliedPromo
-        ? (PROMO_CODES[appliedPromo] < 1 ? subtotal * PROMO_CODES[appliedPromo] : PROMO_CODES[appliedPromo])
+        ? (PROMO_PREVIEW[appliedPromo] < 1 ? subtotal * PROMO_PREVIEW[appliedPromo] : PROMO_PREVIEW[appliedPromo])
         : 0;
     const total = Math.max(0, subtotal + delivery - discount);
 
     const handlePromo = () => {
         const code = promoInput.trim().toUpperCase();
         if (!code) { showNotification('Please enter a promo code', 'warning'); return; }
-        if (PROMO_CODES[code]) {
+        if (PROMO_PREVIEW[code]) {
             setAppliedPromo(code);
             setPromoMsg(`✅ Code "${code}" applied!`);
             showNotification('Promo code applied!', 'success');
@@ -36,17 +34,13 @@ export default function Cart() {
         }
     };
 
-    const handlePlaceOrder = async e => {
-        e.preventDefault();
-        setProcessing(true);
-        await new Promise(r => setTimeout(r, 1800));
-        const id = '#ORG' + Date.now();
-        setOrderId(id);
-        clearCart();
-        setCheckoutOpen(false);
-        setSuccessOpen(true);
-        setAppliedPromo('');
-        setProcessing(false);
+    const handleCheckout = () => {
+        if (!user) {
+            showNotification('Please log in to proceed to checkout', 'warning');
+            navigate('/login');
+            return;
+        }
+        navigate('/checkout');
     };
 
     const recommended = [
@@ -55,9 +49,7 @@ export default function Cart() {
         { id: 103, name: 'Organic Apples', price: 120, image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300', rating: 4.8, farmer: 'Apple Valley', certified: true },
     ];
 
-    const { addToCart } = useApp();
-
-    if (cart.length === 0 && !successOpen) return (
+    if (cart.length === 0) return (
         <>
             <div className="page-header"><div className="container"><h1>Shopping Cart</h1></div></div>
             <div className="empty-state section">
@@ -106,7 +98,7 @@ export default function Cart() {
 
                             {/* Promo */}
                             <div style={{ background: 'white', borderRadius: 'var(--radius)', border: '1px solid var(--border)', padding: '1.25rem', marginTop: '1rem' }}>
-                                <h6 style={{ fontWeight: 700, marginBottom: '0.75rem' }}>🏷️ Promo Code</h6>
+                                <h6 style={{ fontWeight: 700, marginBottom: '0.75rem' }}>🏷️ Promo Code <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)' }}>(applies in checkout too)</span></h6>
                                 <div className="promo-row">
                                     <input className="form-control" placeholder="ORGANIC10 / FIRST20 / SAVE50" value={promoInput} onChange={e => setPromoInput(e.target.value)} />
                                     <button className="btn btn-primary btn-sm" onClick={handlePromo}>Apply</button>
@@ -120,15 +112,26 @@ export default function Cart() {
                             <h4>Order Summary</h4>
                             <div className="summary-row"><span>Items ({cart.reduce((t, i) => t + i.quantity, 0)})</span><span>₹{subtotal.toFixed(2)}</span></div>
                             <div className="summary-row"><span>Delivery</span><span style={{ color: delivery === 0 ? 'var(--primary)' : '' }}>{delivery === 0 ? 'FREE' : `₹${delivery}`}</span></div>
-                            {discount > 0 && <div className="summary-row"><span>Discount</span><span style={{ color: 'var(--primary)' }}>-₹{discount.toFixed(2)}</span></div>}
+                            {discount > 0 && <div className="summary-row"><span>Discount ({appliedPromo})</span><span style={{ color: 'var(--primary)' }}>-₹{discount.toFixed(2)}</span></div>}
                             {subtotal < FREE_DELIVERY && (
                                 <p style={{ fontSize: '0.82rem', color: 'var(--primary)', marginBottom: '0.75rem' }}>
                                     Add ₹{(FREE_DELIVERY - subtotal).toFixed(0)} more for FREE delivery!
                                 </p>
                             )}
-                            <div className="summary-row total"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
-                            <button className="btn btn-primary btn-block" style={{ marginTop: '1.25rem' }} onClick={() => setCheckoutOpen(true)}>
+                            <div className="summary-row total"><span>Total (est.)</span><span>₹{total.toFixed(2)}</span></div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                                * Final price is calculated securely on checkout.
+                            </p>
+                            <button
+                                id="cart-checkout-btn"
+                                className="btn btn-primary btn-block"
+                                style={{ marginTop: '0.75rem' }}
+                                onClick={handleCheckout}
+                            >
                                 <i className="fas fa-lock"></i> Proceed to Checkout
+                            </button>
+                            <button className="btn btn-sm btn-outline" style={{ width: '100%', marginTop: '0.5rem' }} onClick={() => navigate('/products')}>
+                                <i className="fas fa-arrow-left"></i> Continue Shopping
                             </button>
                         </div>
                     </div>
@@ -161,67 +164,6 @@ export default function Cart() {
                     )}
                 </div>
             </section>
-
-            {/* Checkout Modal */}
-            {checkoutOpen && (
-                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCheckoutOpen(false)}>
-                    <div className="modal-box">
-                        <div className="modal-header">
-                            <span>Checkout — ₹{total.toFixed(2)}</span>
-                            <button className="modal-close" onClick={() => setCheckoutOpen(false)}>&times;</button>
-                        </div>
-                        <form onSubmit={handlePlaceOrder}>
-                            <div className="modal-body">
-                                <h6 style={{ fontWeight: 700, marginBottom: '1rem' }}>Delivery Address</h6>
-                                <div className="form-group">
-                                    <label className="form-label">Full Name *</label>
-                                    <input className="form-control" required value={checkoutForm.name} onChange={e => setCheckoutForm({ ...checkoutForm, name: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Address *</label>
-                                    <textarea className="form-control" rows={2} required value={checkoutForm.address} onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })} />
-                                </div>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label className="form-label">City *</label>
-                                        <input className="form-control" required value={checkoutForm.city} onChange={e => setCheckoutForm({ ...checkoutForm, city: e.target.value })} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Phone *</label>
-                                        <input className="form-control" required value={checkoutForm.phone} onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value.replace(/\D/, '').slice(0, 10) })} />
-                                    </div>
-                                </div>
-                                <h6 style={{ fontWeight: 700, margin: '1rem 0 0.75rem' }}>Payment Method</h6>
-                                {[['cod', 'Cash on Delivery'], ['upi', 'UPI'], ['card', 'Credit/Debit Card'], ['netbanking', 'Net Banking']].map(([v, l]) => (
-                                    <label key={v} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', cursor: 'pointer' }}>
-                                        <input type="radio" name="payment" value={v} checked={checkoutForm.payment === v} onChange={() => setCheckoutForm({ ...checkoutForm, payment: v })} />
-                                        {l}
-                                    </label>
-                                ))}
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-outline" onClick={() => setCheckoutOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary" disabled={processing}>
-                                    {processing ? <><span className="spinner"></span> Processing...</> : <><i className="fas fa-check"></i> Place Order</>}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Success Modal */}
-            {successOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-box" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-                        <i className="fas fa-check-circle fa-5x" style={{ color: 'var(--primary)', marginBottom: '1.5rem', display: 'block' }}></i>
-                        <h3 style={{ fontWeight: 800, marginBottom: '0.75rem' }}>Order Placed Successfully!</h3>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Thank you! You'll receive a confirmation email shortly.</p>
-                        <p style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '2rem' }}>Order ID: {orderId}</p>
-                        <button className="btn btn-primary" onClick={() => setSuccessOpen(false)}>Continue Shopping</button>
-                    </div>
-                </div>
-            )}
         </>
     );
 }

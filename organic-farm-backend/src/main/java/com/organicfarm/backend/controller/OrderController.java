@@ -10,6 +10,9 @@ import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -20,6 +23,8 @@ public class OrderController {
     /**
      * POST /api/orders
      * Authenticated users only. Places an order from the cart.
+     * All prices are computed server-side — the frontend sends only
+     * productId + quantity (never price).
      */
     @PostMapping
     public ResponseEntity<OrderDTO.Response> placeOrder(
@@ -50,5 +55,19 @@ public class OrderController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetailsImpl user) {
         return ResponseEntity.ok(orderService.getOrderById(id, user.getId()));
+    }
+
+    /**
+     * POST /api/orders/validate-promo
+     * Validates a promo code and returns the discount amount.
+     * Subtotal is sent from the frontend just to compute percentage discount —
+     * the backend re-validates everything on final order placement anyway.
+     */
+    @PostMapping("/validate-promo")
+    public ResponseEntity<Map<String, Object>> validatePromo(
+            @RequestBody Map<String, Object> body) {
+        String code = (String) body.getOrDefault("code", "");
+        BigDecimal subtotal = new BigDecimal(body.getOrDefault("subtotal", "0").toString());
+        return ResponseEntity.ok(orderService.validatePromo(code, subtotal));
     }
 }

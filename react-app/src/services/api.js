@@ -46,11 +46,37 @@ async function handleResponse(res) {
 // ═══════════════════════════════════════════════════════
 export const authApi = {
     login: (email, password, rememberMe = false) =>
-        fetch(`${BASE_URL}/auth/login`, options('POST', { email, password, rememberMe }))
+        fetch(`${BASE_URL}/auth/login`, options('POST', { email: email.trim().toLowerCase(), password, rememberMe }))
             .then(handleResponse),
 
     register: (name, email, phone, password, confirmPassword, userType) =>
-        fetch(`${BASE_URL}/auth/register`, options('POST', { name, email, phone, password, confirmPassword, userType }))
+        fetch(`${BASE_URL}/auth/register`, options('POST', {
+            name, email: email.trim().toLowerCase(), phone, password, confirmPassword, userType
+        })).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  EMAIL VERIFICATION
+// ═══════════════════════════════════════════════════════
+export const verificationApi = {
+    /** Send OTP to an email (also used as resend) */
+    send: (email) =>
+        fetch(`${BASE_URL}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
+            .then(handleResponse),
+
+    /** Alias for send — semantically clearer on the resend button */
+    resend: (email) =>
+        fetch(`${BASE_URL}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
+            .then(handleResponse),
+
+    /** Verify the user-entered OTP */
+    verify: (email, otp) =>
+        fetch(`${BASE_URL}/verification/verify`, options('POST', { email: email.trim().toLowerCase(), otp }))
+            .then(handleResponse),
+
+    /** Get verification status for an email */
+    status: (email) =>
+        fetch(`${BASE_URL}/verification/status?email=${encodeURIComponent(email.trim().toLowerCase())}`, options('GET'))
             .then(handleResponse),
 };
 
@@ -103,6 +129,12 @@ export const productApi = {
 //  ORDERS
 // ═══════════════════════════════════════════════════════
 export const orderApi = {
+    /**
+     * Place an order. Only productId + quantity are sent — prices come from backend.
+     * @param {Object} orderData - { items: [{productId, quantity}], deliveryName,
+     *   deliveryAddress, deliveryCity, deliveryState, deliveryPincode, deliveryPhone,
+     *   paymentMethod: 'COD'|'ONLINE', promoCode? }
+     */
     place: (orderData) =>
         fetch(`${BASE_URL}/orders`, options('POST', orderData)).then(handleResponse),
 
@@ -111,6 +143,43 @@ export const orderApi = {
 
     getById: (id) =>
         fetch(`${BASE_URL}/orders/${id}`, options('GET')).then(handleResponse),
+
+    /** Validate a coupon code — returns { code, discount, valid } */
+    validatePromo: (code, subtotal) =>
+        fetch(`${BASE_URL}/orders/validate-promo`, options('POST', { code, subtotal }))
+            .then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  ADDRESSES
+// ═══════════════════════════════════════════════════════
+export const addressApi = {
+    getAll: () =>
+        fetch(`${BASE_URL}/addresses`, options('GET')).then(handleResponse),
+
+    save: (addressData) =>
+        fetch(`${BASE_URL}/addresses`, options('POST', addressData)).then(handleResponse),
+
+    delete: (id) =>
+        fetch(`${BASE_URL}/addresses/${id}`, options('DELETE')).then(handleResponse),
+};
+
+// ═══════════════════════════════════════════════════════
+//  PAYMENTS
+// ═══════════════════════════════════════════════════════
+export const paymentApi = {
+    /**
+     * Initiate online payment — returns { gatewayOrderId, amount, currency }
+     */
+    initiate: (orderId) =>
+        fetch(`${BASE_URL}/payments/initiate`, options('POST', { orderId })).then(handleResponse),
+
+    /**
+     * Verify payment after gateway callback.
+     * @param {Object} verifyData - { orderId, gatewayPaymentId, gatewaySignature, gatewayOrderId }
+     */
+    verify: (verifyData) =>
+        fetch(`${BASE_URL}/payments/verify`, options('POST', verifyData)).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════

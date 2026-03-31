@@ -7,12 +7,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Represents both Customer and Farmer users.
  * Role is stored as a string enum: CUSTOMER | FARMER | ADMIN
+ * emailVerified tracks whether the user has confirmed ownership of their email.
  */
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -57,12 +56,21 @@ public class User {
     @Builder.Default
     private boolean enabled = true;
 
+    /** True only after user successfully verifies OTP sent to their address */
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
 
     public enum UserRole {
         CUSTOMER, FARMER, ADMIN

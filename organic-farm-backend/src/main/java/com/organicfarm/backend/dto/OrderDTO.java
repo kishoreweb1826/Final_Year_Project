@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTOs for Order placement and retrieval
+ * DTOs for Order placement and retrieval.
+ * Prices are NEVER accepted from the client — the backend computes
+ * all prices from the DB to prevent fraud.
  */
 public class OrderDTO {
 
@@ -33,7 +35,7 @@ public class OrderDTO {
         @Size(max = 30)
         private String promoCode;
 
-        // Delivery address
+        // Delivery address (typed in or pre-filled from saved address)
         @NotBlank
         @Size(max = 100)
         private String deliveryName;
@@ -42,9 +44,16 @@ public class OrderDTO {
         private String deliveryAddress;
 
         @NotBlank
+        @Size(max = 100)
         private String deliveryCity;
 
-        @Pattern(regexp = "^[6-9]\\d{9}$")
+        @Size(max = 100)
+        private String deliveryState;
+
+        @Size(max = 10)
+        private String deliveryPincode;
+
+        @Pattern(regexp = "^[6-9]\\d{9}$", message = "Enter a valid 10-digit Indian mobile number")
         private String deliveryPhone;
 
         @NotNull
@@ -72,9 +81,15 @@ public class OrderDTO {
         private BigDecimal total;
         private String promoCode;
         private String deliveryName;
+        private String deliveryAddress;
         private String deliveryCity;
+        private String deliveryState;
+        private String deliveryPincode;
+        private String deliveryPhone;
         private String paymentMethod;
         private String status;
         private LocalDateTime createdAt;
+        // Latest payment info (if any)
+        private PaymentDTO.PaymentResponse latestPayment;
     }
 }

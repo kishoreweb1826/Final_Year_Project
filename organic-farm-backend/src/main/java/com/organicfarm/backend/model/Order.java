@@ -39,6 +39,10 @@ public class Order {
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
     @NotNull
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
@@ -71,6 +75,13 @@ public class Order {
     @Column(nullable = false)
     private String deliveryCity;
 
+    @Size(max = 100)
+    private String deliveryState;
+
+    @Size(max = 10)
+    @Column(length = 10)
+    private String deliveryPincode;
+
     @Pattern(regexp = "^[6-9]\\d{9}$")
     @Column(length = 10)
     private String deliveryPhone;
@@ -82,7 +93,7 @@ public class Order {
     private PaymentMethod paymentMethod = PaymentMethod.COD;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 30)
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
@@ -94,10 +105,10 @@ public class Order {
     private LocalDateTime updatedAt;
 
     public enum PaymentMethod {
-        COD, UPI, CARD, NETBANKING
+        COD, ONLINE
     }
 
     public enum OrderStatus {
-        PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+        PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, PAYMENT_PENDING, PAYMENT_FAILED
     }
 }
