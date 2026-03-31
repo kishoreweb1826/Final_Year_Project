@@ -5,9 +5,7 @@
  * When running on Vite dev server (port 5173): uses absolute 'http://localhost:8080/api'
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-fetch(`${API_BASE}/api/products`)
-// Served BY Spring Boot → same origin
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
 
 
 /** Get the stored JWT token from localStorage or sessionStorage */
