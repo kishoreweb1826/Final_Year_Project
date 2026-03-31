@@ -46,11 +46,11 @@ async function handleResponse(res) {
 // ═══════════════════════════════════════════════════════
 export const authApi = {
     login: (email, password, rememberMe = false) =>
-        fetch(`${BASE_URL}/auth/login`, options('POST', { email: email.trim().toLowerCase(), password, rememberMe }))
+        fetch(`${API_BASE}/auth/login`, options('POST', { email: email.trim().toLowerCase(), password, rememberMe }))
             .then(handleResponse),
 
     register: (name, email, phone, password, confirmPassword, userType) =>
-        fetch(`${BASE_URL}/auth/register`, options('POST', {
+        fetch(`${API_BASE}/auth/register`, options('POST', {
             name, email: email.trim().toLowerCase(), phone, password, confirmPassword, userType
         })).then(handleResponse),
 };
@@ -61,22 +61,22 @@ export const authApi = {
 export const verificationApi = {
     /** Send OTP to an email (also used as resend) */
     send: (email) =>
-        fetch(`${BASE_URL}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
+        fetch(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
             .then(handleResponse),
 
     /** Alias for send — semantically clearer on the resend button */
     resend: (email) =>
-        fetch(`${BASE_URL}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
+        fetch(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
             .then(handleResponse),
 
     /** Verify the user-entered OTP */
     verify: (email, otp) =>
-        fetch(`${BASE_URL}/verification/verify`, options('POST', { email: email.trim().toLowerCase(), otp }))
+        fetch(`${API_BASE}/verification/verify`, options('POST', { email: email.trim().toLowerCase(), otp }))
             .then(handleResponse),
 
     /** Get verification status for an email */
     status: (email) =>
-        fetch(`${BASE_URL}/verification/status?email=${encodeURIComponent(email.trim().toLowerCase())}`, options('GET'))
+        fetch(`${API_BASE}/verification/status?email=${encodeURIComponent(email.trim().toLowerCase())}`, options('GET'))
             .then(handleResponse),
 };
 
@@ -91,14 +91,14 @@ export const productApi = {
         if (sort) params.set('sort', sort);
         params.set('page', page);
         params.set('size', size);
-        return fetch(`${BASE_URL}/products?${params}`, options('GET')).then(handleResponse);
+        return fetch(`${API_BASE}/products?${params}`, options('GET')).then(handleResponse);
     },
 
     getById: (id) =>
-        fetch(`${BASE_URL}/products/${id}`, options('GET')).then(handleResponse),
+        fetch(`${API_BASE}/products/${id}`, options('GET')).then(handleResponse),
 
     create: (product) =>
-        fetch(`${BASE_URL}/products`, options('POST', {
+        fetch(`${API_BASE}/products`, options('POST', {
             name: product.name,
             price: product.price,
             category: (product.category || 'OTHER').toUpperCase(),
@@ -110,7 +110,7 @@ export const productApi = {
         })).then(handleResponse),
 
     update: (id, product) =>
-        fetch(`${BASE_URL}/products/${id}`, options('PUT', {
+        fetch(`${API_BASE}/products/${id}`, options('PUT', {
             name: product.name,
             price: product.price,
             category: (product.category || 'OTHER').toUpperCase(),
@@ -122,7 +122,7 @@ export const productApi = {
         })).then(handleResponse),
 
     delete: (id) =>
-        fetch(`${BASE_URL}/products/${id}`, options('DELETE')).then(handleResponse),
+        fetch(`${API_BASE}/products/${id}`, options('DELETE')).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -136,17 +136,17 @@ export const orderApi = {
      *   paymentMethod: 'COD'|'ONLINE', promoCode? }
      */
     place: (orderData) =>
-        fetch(`${BASE_URL}/orders`, options('POST', orderData)).then(handleResponse),
+        fetch(`${API_BASE}/orders`, options('POST', orderData)).then(handleResponse),
 
     getMyOrders: (page = 0, size = 10) =>
-        fetch(`${BASE_URL}/orders?page=${page}&size=${size}`, options('GET')).then(handleResponse),
+        fetch(`${API_BASE}/orders?page=${page}&size=${size}`, options('GET')).then(handleResponse),
 
     getById: (id) =>
-        fetch(`${BASE_URL}/orders/${id}`, options('GET')).then(handleResponse),
+        fetch(`${API_BASE}/orders/${id}`, options('GET')).then(handleResponse),
 
     /** Validate a coupon code — returns { code, discount, valid } */
     validatePromo: (code, subtotal) =>
-        fetch(`${BASE_URL}/orders/validate-promo`, options('POST', { code, subtotal }))
+        fetch(`${API_BASE}/orders/validate-promo`, options('POST', { code, subtotal }))
             .then(handleResponse),
 };
 
@@ -155,13 +155,13 @@ export const orderApi = {
 // ═══════════════════════════════════════════════════════
 export const addressApi = {
     getAll: () =>
-        fetch(`${BASE_URL}/addresses`, options('GET')).then(handleResponse),
+        fetch(`${API_BASE}/addresses`, options('GET')).then(handleResponse),
 
     save: (addressData) =>
-        fetch(`${BASE_URL}/addresses`, options('POST', addressData)).then(handleResponse),
+        fetch(`${API_BASE}/addresses`, options('POST', addressData)).then(handleResponse),
 
     delete: (id) =>
-        fetch(`${BASE_URL}/addresses/${id}`, options('DELETE')).then(handleResponse),
+        fetch(`${API_BASE}/addresses/${id}`, options('DELETE')).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -172,14 +172,14 @@ export const paymentApi = {
      * Initiate online payment — returns { gatewayOrderId, amount, currency }
      */
     initiate: (orderId) =>
-        fetch(`${BASE_URL}/payments/initiate`, options('POST', { orderId })).then(handleResponse),
+        fetch(`${API_BASE}/payments/initiate`, options('POST', { orderId })).then(handleResponse),
 
     /**
      * Verify payment after gateway callback.
      * @param {Object} verifyData - { orderId, gatewayPaymentId, gatewaySignature, gatewayOrderId }
      */
     verify: (verifyData) =>
-        fetch(`${BASE_URL}/payments/verify`, options('POST', verifyData)).then(handleResponse),
+        fetch(`${API_BASE}/payments/verify`, options('POST', verifyData)).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -195,12 +195,12 @@ export const farmerApi = {
         multipart.append('data', new Blob([JSON.stringify(formData)], { type: 'application/json' }));
         if (certificateFile) multipart.append('certificate', certificateFile);
 
-        return fetch(`${BASE_URL}/farmers/register`, { method: 'POST', headers, body: multipart })
+        return fetch(`${API_BASE}/farmers/register`, { method: 'POST', headers, body: multipart })
             .then(handleResponse);
     },
 
     getStatus: (id) =>
-        fetch(`${BASE_URL}/farmers/registration/${id}`, options('GET')).then(handleResponse),
+        fetch(`${API_BASE}/farmers/registration/${id}`, options('GET')).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ export const farmerApi = {
 // ═══════════════════════════════════════════════════════
 export const contactApi = {
     send: (formData) =>
-        fetch(`${BASE_URL}/contact`, options('POST', formData)).then(handleResponse),
+        fetch(`${API_BASE}/contact`, options('POST', formData)).then(handleResponse),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -216,16 +216,16 @@ export const contactApi = {
 // ═══════════════════════════════════════════════════════
 export const aiApi = {
     cropRecommendation: (data) =>
-        fetch(`${BASE_URL}/ai-tools/crop-recommendation`, options('POST', data)).then(handleResponse),
+        fetch(`${API_BASE}/ai-tools/crop-recommendation`, options('POST', data)).then(handleResponse),
 
     resourceManagement: (data) =>
-        fetch(`${BASE_URL}/ai-tools/resource-management`, options('POST', data)).then(handleResponse),
+        fetch(`${API_BASE}/ai-tools/resource-management`, options('POST', data)).then(handleResponse),
 
     weatherForecast: (location) =>
-        fetch(`${BASE_URL}/ai-tools/weather-forecast`, options('POST', { location })).then(handleResponse),
+        fetch(`${API_BASE}/ai-tools/weather-forecast`, options('POST', { location })).then(handleResponse),
 
     soilAnalysis: (data) =>
-        fetch(`${BASE_URL}/ai-tools/soil-analysis`, options('POST', data)).then(handleResponse),
+        fetch(`${API_BASE}/ai-tools/soil-analysis`, options('POST', data)).then(handleResponse),
 };
 
 /** Normalise a backend Product response to the shape the UI expects */
