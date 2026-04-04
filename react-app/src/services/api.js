@@ -5,7 +5,7 @@
  * When running on Vite dev server (port 5173): uses absolute 'http://localhost:8080/api'
  */
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'https://final-year-project-2-fp45.onrender.com') + '/api';
+export const API_BASE = (import.meta.env.VITE_API_URL || 'https://final-year-project-2-fp45.onrender.com') + '/api';
 
 
 /** Get the stored JWT token from localStorage or sessionStorage */

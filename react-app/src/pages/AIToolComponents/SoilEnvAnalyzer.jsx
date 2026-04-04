@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../services/api';
 import VoiceExplainer from './VoiceExplainer';
 
 export default function SoilEnvAnalyzer() {
@@ -19,7 +20,7 @@ export default function SoilEnvAnalyzer() {
             Object.keys(form).forEach(key => formData.append(key, form[key]));
             if (image) formData.append('image', image);
 
-            const res = await fetch("http://localhost:8080/api/ai-tools/analyze", {
+            const res = await fetch(`${API_BASE}/ai-tools/analyze`, {
                 method: "POST",
                 body: formData
             });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { aiApi } from '../services/api';
+import { aiApi, API_BASE } from '../services/api';
 
 // â”€â”€â”€â”€â”€â”€â”€â”€ Voice Explainer Component â”€â”€â”€â”€â”€â”€â”€â”€
 function VoiceExplainer({ text, title }) {
@@ -809,7 +809,7 @@ function SoilEnvAnalyzer() {
             Object.keys(form).forEach(key => formData.append(key, form[key]));
             if (image) formData.append('image', image);
 
-            const res = await fetch("http://localhost:8080/api/ai-tools/analyze", {
+            const res = await fetch(`${API_BASE}/ai-tools/analyze`, {
                 method: "POST",
                 body: formData
             });
