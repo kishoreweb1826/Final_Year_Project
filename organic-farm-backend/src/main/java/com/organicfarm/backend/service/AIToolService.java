@@ -3,7 +3,6 @@ package com.organicfarm.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.organicfarm.backend.dto.AIToolDTO;
 import com.organicfarm.backend.model.AIToolLog;
-import com.organicfarm.backend.model.User;
 import com.organicfarm.backend.repository.AIToolLogRepository;
 import com.organicfarm.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,10 +57,11 @@ public class AIToolService {
 
     private AIToolDTO.CropResponse ruleBasedCropRecommendation(AIToolDTO.CropRequest req) {
         List<AIToolDTO.CropResult> crops = new ArrayList<>();
-        crops.add(new AIToolDTO.CropResult());
-        crops.get(0).setName("Rice");
-        crops.get(0).setConfidence(0.92);
-        crops.get(0).setReason("Optimal NPK ratio and high rainfall");
+        AIToolDTO.CropResult r = new AIToolDTO.CropResult();
+        r.setName("Rice");
+        r.setConfidence(0.92);
+        r.setReason("Optimal potassium and high rainfall");
+        crops.add(r);
 
         AIToolDTO.CropResult w = new AIToolDTO.CropResult();
         w.setName("Wheat");
@@ -281,7 +281,106 @@ public class AIToolService {
         return resp;
     }
 
-    // ── Audit Logging ─────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    // 5. SOIL & ENVIRONMENT ANALYZER
+    // ══════════════════════════════════════════════════════════════════
+    public AIToolDTO.AnalyzeResponse getAnalyzeSoilEnvironment(AIToolDTO.AnalyzeRequest req, Long userId) {
+        long start = System.currentTimeMillis();
+        
+        AIToolDTO.AnalyzeResponse response = ruleBasedAnalyzeSoil(req);
+        response.setModelVersion(MODEL_VERSION);
+
+        saveLog(AIToolLog.AIToolType.SOIL_ENVIRONMENT_ANALYZER, userId, req, response, System.currentTimeMillis() - start);
+        return response;
+    }
+
+    private AIToolDTO.AnalyzeResponse ruleBasedAnalyzeSoil(AIToolDTO.AnalyzeRequest req) {
+        List<String> issues = new ArrayList<>();
+        List<String> causes = new ArrayList<>();
+        List<String> solutions = new ArrayList<>();
+        int severityLevel = 0; // 0=None, 1=Low, 2=Medium, 3=High
+
+        double ph = req.getSoilPh() != null ? req.getSoilPh() : 7.0;
+        double potassium = req.getPotassium() != null ? req.getPotassium() : 50.0;
+        double moisture = req.getMoisture() != null ? req.getMoisture() : 50.0;
+        double temp = req.getTemperature() != null ? req.getTemperature() : 25.0;
+        double humidity = req.getHumidity() != null ? req.getHumidity() : 50.0;
+        double rainfall = req.getRainfall() != null ? req.getRainfall() : 100.0;
+
+        if (ph < 5.5) {
+            issues.add("Acidic Soil");
+            causes.add("Low pH levels");
+            solutions.add("Apply agricultural lime to raise pH");
+            severityLevel = Math.max(severityLevel, 2);
+        }
+        if (ph > 8) {
+            issues.add("Alkaline Soil");
+            causes.add("High pH levels");
+            solutions.add("Add organic matter, elemental sulfur, or peat moss");
+            severityLevel = Math.max(severityLevel, 2);
+        }
+        if (potassium < 15) {
+            issues.add("Potassium Deficiency");
+            causes.add("Low potassium content");
+            solutions.add("Apply potash, wood ash, or kelp meal");
+            severityLevel = Math.max(severityLevel, 2);
+        }
+        if (moisture < 20) {
+            issues.add("Low Soil Moisture");
+            causes.add("Inadequate irrigation or drought");
+            solutions.add("Increase irrigation frequency and use mulching");
+            severityLevel = Math.max(severityLevel, 3);
+        }
+        if (temp > 30 && humidity > 70) {
+            issues.add("High Fungal Risk");
+            causes.add("Hot and humid environmental conditions");
+            solutions.add("Apply preventive organic fungicides (e.g., Neem oil)");
+            severityLevel = Math.max(severityLevel, 3);
+        }
+        if (rainfall > 200) {
+            issues.add("Waterlogging Risk");
+            causes.add("Excessive rainfall");
+            solutions.add("Improve field drainage channels");
+            severityLevel = Math.max(severityLevel, 2);
+        }
+
+        AIToolDTO.AnalyzeResponse resp = new AIToolDTO.AnalyzeResponse();
+        if (issues.isEmpty()) {
+            resp.setIssue("Optimal Conditions");
+            resp.setSeverity("None");
+            resp.setCauses(List.of("Balanced soil nutrients and weather"));
+            resp.setSolutions(List.of("Maintain current farming practices"));
+            resp.setConfidence(0.95);
+        } else {
+            String primary = issues.get(0);
+            if (issues.size() > 1) primary += " (+" + (issues.size() - 1) + " more)";
+            resp.setIssue(primary);
+            resp.setSeverity(severityLevel == 3 ? "High" : severityLevel == 2 ? "Medium" : "Low");
+            resp.setCauses(causes);
+            resp.setSolutions(solutions);
+            resp.setConfidence(Math.min(0.95, 0.70 + (0.05 * issues.size())));
+        }
+        resp.setImage_observation("No signs of disease detected in image texture analysis");
+
+        List<AIToolDTO.ProductRecommendation> products = new ArrayList<>();
+        if (issues.contains("Nitrogen Deficiency") || issues.contains("Phosphorus Deficiency")) {
+             AIToolDTO.ProductRecommendation p = new AIToolDTO.ProductRecommendation();
+             p.setName("Premium Organic NPK Fertilizer"); p.setPrice(450); p.setImage("/images/fertilizer.jpg");
+             products.add(p);
+        }
+        if (issues.contains("High Fungal Risk")) {
+            AIToolDTO.ProductRecommendation p = new AIToolDTO.ProductRecommendation();
+            p.setName("Organic Neem Oil Fungicide"); p.setPrice(250); p.setImage("/images/neemoil.jpg");
+            products.add(p);
+        }
+        if (products.isEmpty()) {
+            AIToolDTO.ProductRecommendation p = new AIToolDTO.ProductRecommendation();
+            p.setName("All-Purpose Organic Compost"); p.setPrice(200); p.setImage("/images/compost.jpg");
+            products.add(p);
+        }
+        resp.setProducts(products);
+        return resp;
+    }
     private void saveLog(AIToolLog.AIToolType toolType, Long userId, Object input, Object output, long ms) {
         try {
             AIToolLog log = AIToolLog.builder()

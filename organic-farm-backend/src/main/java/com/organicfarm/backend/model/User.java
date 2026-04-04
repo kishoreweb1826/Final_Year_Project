@@ -57,9 +57,17 @@ public class User {
     private boolean enabled = true;
 
     /** True only after user successfully verifies OTP sent to their address */
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private Boolean emailVerified = false;
+
+    /**
+     * For FARMER accounts: true only after admin reviews and approves the certificate.
+     * CUSTOMER accounts default to true (no review needed).
+     */
+    @Column(name = "farmer_approved", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean farmerApproved = false;
 
     @CreationTimestamp
     @Column(updatable = false)

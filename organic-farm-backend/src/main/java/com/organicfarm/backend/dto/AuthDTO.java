@@ -57,15 +57,17 @@ public class AuthDTO {
         private String email;
         private String role;
         private boolean emailVerified;
+        private boolean farmerApproved;
 
         public AuthResponse(String token, Long id, String name, String email,
-                            String role, boolean emailVerified) {
+                            String role, boolean emailVerified, boolean farmerApproved) {
             this.token = token;
             this.id = id;
             this.name = name;
             this.email = email;
             this.role = role;
             this.emailVerified = emailVerified;
+            this.farmerApproved = farmerApproved;
         }
     }
 }

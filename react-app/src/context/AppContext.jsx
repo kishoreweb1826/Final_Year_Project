@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { authApi, productApi, orderApi, normaliseProduct, verificationApi } from '../services/api';
+import { authApi, productApi, orderApi, normaliseProduct, verificationApi, adminApi } from '../services/api';
 
 const AppContext = createContext(null);
 
@@ -89,7 +89,7 @@ export function AppProvider({ children }) {
             const data = await productApi.getAll({ size: 100 });
             backendOnlineRef.current = true;
             const list = (data?.content || data || []).map(normaliseProduct);
-            return list.length > 0 ? list : SEED_PRODUCTS;
+            return list;
         } catch {
             backendOnlineRef.current = false;
             try {
@@ -164,7 +164,7 @@ export function AppProvider({ children }) {
             // Products
             getProducts, saveProducts, addProduct, updateProduct, deleteProduct,
             // Raw API access for pages
-            authApi, orderApi, verificationApi,
+            authApi, orderApi, verificationApi, adminApi,
         }}>
             {children}
         </AppContext.Provider>

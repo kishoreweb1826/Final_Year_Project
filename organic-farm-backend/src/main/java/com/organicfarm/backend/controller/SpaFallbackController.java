@@ -20,11 +20,22 @@ public class SpaFallbackController {
             "/home",
             "/products",
             "/cart",
+            "/checkout",
+            "/order-success",
+            "/orders",
+            "/orders/{id}",
             "/login",
             "/farmers",
             "/ai-tools",
             "/about",
-            "/contact"
+            "/contact",
+            "/dashboard",
+            "/dashboard/wishlist",
+            "/dashboard/addresses",
+            "/dashboard/payments",
+            "/dashboard/settings",
+            "/dashboard/security",
+            "/dashboard/notifications"
     })
     public String forwardToIndex() {
         return "forward:/index.html";

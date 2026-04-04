@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { farmerApi } from '../services/api';
+import { farmerApi, isNetworkError } from '../services/api';
 
 // ─── Email format helpers ─────────────────────────────────────────────────────
 
@@ -252,6 +252,10 @@ export default function Login() {
     const [pwStrength, setPwStrength] = useState(0);
     const [certFile, setCertFile] = useState(null);
     const [certDragging, setCertDragging] = useState(false);
+    // Show/hide password toggles
+    const [showLoginPw, setShowLoginPw] = useState(false);
+    const [showRegPw, setShowRegPw] = useState(false);
+    const [showRegConfirmPw, setShowRegConfirmPw] = useState(false);
     const certFileRef = useRef(null);
 
     const handleCertFile = (file) => {
@@ -314,7 +318,6 @@ export default function Login() {
             const userData = await authApi.login(email, password, remember);
             login(userData, remember);
             if (!userData.emailVerified) {
-                // Account exists but email not yet verified — go to OTP screen
                 setPendingEmail(email.trim().toLowerCase());
                 showNotification('Please verify your email address to continue.', 'warning');
                 setMode('verify');
@@ -323,7 +326,17 @@ export default function Login() {
                 navigate('/');
             }
         } catch (err) {
-            showNotification(err.message || 'Login failed. Please check your credentials.', 'danger');
+            const msg = err.message || '';
+            if (msg.includes('reviewed') || msg.includes('being reviewed') || msg.includes('application')) {
+                // Farmer not yet approved — show review pending screen
+                setMode('farmer-review');
+            } else {
+                if (isNetworkError(err)) {
+                    showNotification('Connection failed. Please ensure your backend server (port 8080) is running.', 'danger');
+                } else {
+                    showNotification(msg || 'Login failed. Please check your credentials.', 'danger');
+                }
+            }
         } finally {
             setLoading(false);
         }
@@ -384,20 +397,17 @@ export default function Login() {
                         certifyingAuthority: regForm.certAuthority,
                     }, certFile);
                 } catch (farmerErr) {
-                    // Account created — just warn that cert submission had an issue
                     console.warn('Farmer certification submission error:', farmerErr);
                     showNotification('Account created! Certification will need to be resubmitted.', 'warning');
                 }
+                // Show farmer review pending screen
+                showNotification('🌾 Farmer account created! Your certificate is now under review.', 'success');
+                setMode('farmer-review');
+            } else {
+                setPendingEmail(email.trim().toLowerCase());
+                showNotification('Account created! A verification code was sent to your email.', 'success');
+                setMode('verify');
             }
-
-            setPendingEmail(email.trim().toLowerCase());
-            showNotification(
-                userType === 'farmer'
-                    ? '🌾 Farmer account created! Check your email for the verification code.'
-                    : 'Account created! A verification code was sent to your email.',
-                'success'
-            );
-            setMode('verify');
         } catch (err) {
             showNotification(err.message || 'Registration failed. Please try again.', 'danger');
         } finally {
@@ -422,6 +432,69 @@ export default function Login() {
     };
 
     const isFarmer = regForm.userType === 'farmer';
+
+    // ── Render: Farmer review pending screen ─────────────────────────────────
+    if (mode === 'farmer-review') {
+        return (
+            <div className="auth-container">
+                <div className="auth-card" style={{ maxWidth: '500px' }}>
+                    <div className="auth-card-header" style={{
+                        background: 'linear-gradient(135deg, #e67e22 0%, #f39c12 100%)'
+                    }}>
+                        <i className="fas fa-clock fa-2x" style={{ marginBottom: '0.5rem', display: 'block' }} />
+                        <h3 style={{ fontWeight: 800, margin: 0 }}>Application Under Review</h3>
+                        <p style={{ opacity: 0.9, margin: '0.25rem 0 0', fontSize: '0.9rem' }}>Your farmer account is being verified</p>
+                    </div>
+                    <div className="auth-card-body" style={{ textAlign: 'center', padding: '2.5rem 2rem' }}>
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #fff3cd, #ffeeba)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 1.5rem', fontSize: '2rem', color: '#e67e22',
+                            border: '3px solid #ffc107',
+                        }}>
+                            <i className="fas fa-user-clock"></i>
+                        </div>
+                        <h4 style={{ fontWeight: 800, color: 'var(--dark)', marginBottom: '1rem' }}>
+                            Your application is being reviewed by our authorities
+                        </h4>
+                        <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '1.5rem', fontSize: '0.92rem' }}>
+                            Thank you for registering as a farmer! Your organic certification has been submitted
+                            and is currently under review by our verification team.
+                        </p>
+                        <div style={{
+                            background: '#f8f9fa', borderRadius: 'var(--radius)', padding: '1.25rem',
+                            textAlign: 'left', marginBottom: '1.5rem', border: '1px solid var(--border)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <i className="fas fa-check-circle" style={{ color: 'var(--primary)', marginTop: '0.2rem' }}></i>
+                                <span style={{ fontSize: '0.88rem' }}>Account created successfully</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <i className="fas fa-check-circle" style={{ color: 'var(--primary)', marginTop: '0.2rem' }}></i>
+                                <span style={{ fontSize: '0.88rem' }}>Certificate uploaded for review</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <i className="fas fa-spinner fa-spin" style={{ color: '#e67e22', marginTop: '0.2rem' }}></i>
+                                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#e67e22' }}>Admin review in progress (usually 24-48 hours)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <i className="fas fa-circle" style={{ color: '#ccc', marginTop: '0.2rem', fontSize: '0.8rem' }}></i>
+                                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Login enabled after approval</span>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                            <i className="fas fa-envelope" style={{ marginRight: '0.3rem' }}></i>
+                            You will receive an email notification once your account is approved.
+                        </p>
+                        <button className="btn btn-primary btn-block" onClick={() => setMode('login')}>
+                            <i className="fas fa-arrow-left"></i> Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // ── Render: OTP verify screen ────────────────────────────────────────────
     if (mode === 'verify') {
@@ -526,8 +599,13 @@ export default function Login() {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Password</label>
-                                <input className="form-control" type="password" id="loginPassword" required value={loginForm.password}
-                                    onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} placeholder="••••••••" />
+                                <div className="password-field">
+                                    <input className="form-control" type={showLoginPw ? 'text' : 'password'} id="loginPassword" required value={loginForm.password}
+                                        onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} placeholder="••••••••" />
+                                    <button type="button" className="password-toggle-btn" onClick={() => setShowLoginPw(!showLoginPw)} tabIndex={-1} aria-label={showLoginPw ? 'Hide password' : 'Show password'}>
+                                        <i className={`fas ${showLoginPw ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                    </button>
+                                </div>
                             </div>
                             <div className="form-check" style={{ marginBottom: '1.5rem' }}>
                                 <input type="checkbox" id="rememberMe" checked={loginForm.remember}
@@ -771,9 +849,14 @@ export default function Login() {
                             {/* Password */}
                             <div className="form-group">
                                 <label className="form-label">Password *</label>
-                                <input className="form-control" type="password" id="registerPassword" required value={regForm.password}
-                                    onChange={e => { setRegForm({ ...regForm, password: e.target.value }); setPwStrength(calcStrength(e.target.value)); }}
-                                    placeholder="Min 8 characters" />
+                                <div className="password-field">
+                                    <input className="form-control" type={showRegPw ? 'text' : 'password'} id="registerPassword" required value={regForm.password}
+                                        onChange={e => { setRegForm({ ...regForm, password: e.target.value }); setPwStrength(calcStrength(e.target.value)); }}
+                                        placeholder="Min 8 characters" />
+                                    <button type="button" className="password-toggle-btn" onClick={() => setShowRegPw(!showRegPw)} tabIndex={-1} aria-label={showRegPw ? 'Hide password' : 'Show password'}>
+                                        <i className={`fas ${showRegPw ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                    </button>
+                                </div>
                                 {regForm.password && (
                                     <>
                                         <div style={{ background: '#e9ecef', height: '6px', borderRadius: '3px', marginTop: '0.35rem', overflow: 'hidden' }}>
@@ -785,8 +868,13 @@ export default function Login() {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Confirm Password *</label>
-                                <input className="form-control" type="password" id="confirmPassword" required value={regForm.confirmPassword}
-                                    onChange={e => setRegForm({ ...regForm, confirmPassword: e.target.value })} placeholder="Repeat password" />
+                                <div className="password-field">
+                                    <input className="form-control" type={showRegConfirmPw ? 'text' : 'password'} id="confirmPassword" required value={regForm.confirmPassword}
+                                        onChange={e => setRegForm({ ...regForm, confirmPassword: e.target.value })} placeholder="Repeat password" />
+                                    <button type="button" className="password-toggle-btn" onClick={() => setShowRegConfirmPw(!showRegConfirmPw)} tabIndex={-1} aria-label={showRegConfirmPw ? 'Hide password' : 'Show password'}>
+                                        <i className={`fas ${showRegConfirmPw ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                    </button>
+                                </div>
                                 {regForm.confirmPassword && regForm.password !== regForm.confirmPassword && (
                                     <small style={{ color: 'var(--danger)', fontSize: '0.78rem' }}>Passwords do not match</small>
                                 )}

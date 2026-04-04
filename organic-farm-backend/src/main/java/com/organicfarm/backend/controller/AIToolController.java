@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 /**
  * AI Tools REST API
@@ -77,5 +79,18 @@ public class AIToolController {
             @AuthenticationPrincipal UserDetailsImpl user) {
         Long userId = user != null ? user.getId() : null;
         return ResponseEntity.ok(aiToolService.getSoilAnalysis(req, userId));
+    }
+
+    /**
+     * POST /api/ai-tools/analyze
+     * Comprehensive soil and environment analysis
+     */
+    @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AIToolDTO.AnalyzeResponse> analyze(
+            AIToolDTO.AnalyzeRequest req,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @AuthenticationPrincipal UserDetailsImpl user) {
+        Long userId = user != null ? user.getId() : null;
+        return ResponseEntity.ok(aiToolService.getAnalyzeSoilEnvironment(req, userId));
     }
 }

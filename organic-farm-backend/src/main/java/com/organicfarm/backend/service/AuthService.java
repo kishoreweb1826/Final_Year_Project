@@ -26,13 +26,25 @@ public class AuthService {
     private final EmailVerificationService emailVerificationService;
 
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest req) {
+        String normalizedEmail = req.getEmail().trim().toLowerCase();
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
+                new UsernamePasswordAuthenticationToken(normalizedEmail, req.getPassword()));
         UserDetailsImpl principal = (UserDetailsImpl) auth.getPrincipal();
+
+        // Block login for unapproved farmers
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        if (user.getRole() == User.UserRole.FARMER && !Boolean.TRUE.equals(user.getFarmerApproved())) {
+            throw new com.organicfarm.backend.exception.BusinessException(
+                    "Your farmer application is currently being reviewed by our authorities. " +
+                    "You will be able to login once your certificate is approved. " +
+                    "Please check back later or contact support for more information.");
+        }
+
         String token = jwtUtils.generateToken(auth);
         return new AuthDTO.AuthResponse(token, principal.getId(), principal.getName(),
                 principal.getEmail(), principal.getRole().name().toLowerCase(),
-                principal.isEmailVerified());
+                principal.isEmailVerified(), Boolean.TRUE.equals(user.getFarmerApproved()));
     }
 
     @Transactional
@@ -47,9 +59,22 @@ public class AuthService {
             throw new DuplicateResourceException("An account with this email already exists.");
         }
 
-        User.UserRole role = "farmer".equalsIgnoreCase(req.getUserType())
-                ? User.UserRole.FARMER
-                : User.UserRole.CUSTOMER;
+        User.UserRole role;
+        boolean isFarmerApproved;
+        boolean isEmailVerified;
+
+        // Unique admin registration logic
+        if ("admin@organicfarm.com".equalsIgnoreCase(normalizedEmail)) {
+            role = User.UserRole.ADMIN;
+            isFarmerApproved = true; // Admins don't need farmer approval
+            isEmailVerified = true;  // Fake email doesn't need OTP!
+        } else {
+            role = "farmer".equalsIgnoreCase(req.getUserType())
+                    ? User.UserRole.FARMER
+                    : User.UserRole.CUSTOMER;
+            isFarmerApproved = (role != User.UserRole.FARMER);
+            isEmailVerified = false;
+        }
 
         User user = User.builder()
                 .name(req.getName())
@@ -57,7 +82,8 @@ public class AuthService {
                 .phone(req.getPhone())
                 .password(passwordEncoder.encode(req.getPassword()))
                 .role(role)
-                .emailVerified(false)
+                .emailVerified(isEmailVerified)
+                .farmerApproved(isFarmerApproved)
                 .build();
 
         userRepository.save(user);
@@ -71,6 +97,7 @@ public class AuthService {
 
         String token = jwtUtils.generateTokenFromEmail(user.getEmail(), user.getId());
         return new AuthDTO.AuthResponse(token, user.getId(), user.getName(),
-                user.getEmail(), user.getRole().name().toLowerCase(), false);
+                user.getEmail(), user.getRole().name().toLowerCase(), false,
+                Boolean.TRUE.equals(user.getFarmerApproved()));
     }
 }

@@ -17,8 +17,6 @@ public class AIToolDTO {
 
     @Data
     public static class CropRequest {
-        private Double nitrogen;
-        private Double phosphorus;
         private Double potassium;
         private Double temperature;
         private Double humidity;
@@ -154,11 +152,38 @@ public class AIToolDTO {
         private List<String> recommendations;
         private List<String> suitableCrops;
         private String modelVersion;
+    }
 
-        // ═══════════════════════════════════════════════════════
-        // PLACEHOLDER: Future AI Model Integration Point
-        // Integrate with soil analysis ML model trained on
-        // agronomic datasets (USDA, ICAR, etc.)
-        // ═══════════════════════════════════════════════════════
+    // ─── AI Soil & Crop Analysis ─────────────────────────────
+
+    @Data
+    public static class AnalyzeRequest {
+        private String cropName;
+        private Double soilPh;
+        private Double moisture;
+        private Double potassium;
+        private Double temperature;
+        private Double humidity;
+        private Double rainfall;
+        private String location;
+    }
+
+    @Data
+    public static class ProductRecommendation {
+        private String name;
+        private Integer price;
+        private String image;
+    }
+
+    @Data
+    public static class AnalyzeResponse {
+        private String issue;
+        private String severity;
+        private List<String> causes;
+        private List<String> solutions;
+        private Double confidence;
+        private String image_observation; // Keeping snake_case to match previous frontend expectancy or changing frontend
+        private List<ProductRecommendation> products;
+        private String modelVersion;
     }
 }

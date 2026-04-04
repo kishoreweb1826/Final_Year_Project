@@ -100,7 +100,9 @@ public class SecurityConfig {
                                 "/farmers",
                                 "/ai-tools",
                                 "/about",
-                                "/contact")
+                                "/contact",
+                                "/dashboard",
+                                "/dashboard/**")
                         .permitAll()
 
                         // ── Public REST API endpoints ─────────────────────────

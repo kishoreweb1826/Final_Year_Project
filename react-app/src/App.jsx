@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Notifications from './components/Notifications';
+import FloatingAIAssistant from './components/FloatingAIAssistant';
 
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -15,6 +16,7 @@ import Farmers from './pages/Farmers';
 import AITools from './pages/AITools';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Dashboard from './pages/Dashboard';
 
 import React from 'react';
 
@@ -66,6 +68,17 @@ export default function App() {
                             <Route path="/ai-tools" element={<AITools />} />
                             <Route path="/about" element={<About />} />
                             <Route path="/contact" element={<Contact />} />
+                            {/* Dashboard routes */}
+                            <Route path="/dashboard" element={<Dashboard />} />
+                            <Route path="/dashboard/wishlist" element={<Dashboard section="wishlist" />} />
+                            <Route path="/dashboard/addresses" element={<Dashboard section="addresses" />} />
+                            <Route path="/dashboard/payments" element={<Dashboard section="payments" />} />
+                            <Route path="/dashboard/settings" element={<Dashboard section="settings" />} />
+                            <Route path="/dashboard/security" element={<Dashboard section="security" />} />
+                            <Route path="/dashboard/notifications" element={<Dashboard section="notifications" />} />
+                            {/* Admin routes */}
+                            <Route path="/dashboard/admin-farmers" element={<Dashboard section="admin-farmers" />} />
+                            <Route path="/dashboard/admin-products" element={<Dashboard section="admin-products" />} />
                             <Route path="*" element={
                                 <div className="empty-state section">
                                     <i className="fas fa-exclamation-triangle"></i>
@@ -77,6 +90,7 @@ export default function App() {
                         </Routes>
                     </main>
                     <Footer />
+                    <FloatingAIAssistant />
                 </BrowserRouter>
             </AppProvider>
         </ErrorBoundary>

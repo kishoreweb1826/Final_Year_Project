@@ -62,8 +62,13 @@ public class GlobalExceptionHandler {
     // ── Generic ────────────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest request) {
+        // Log the full stack trace to the backend console for the developer
+        ex.printStackTrace(); 
+        
+        // Return the actual error message to help identify the problem (e.g. Database connection failed)
+        String message = ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(500, "An unexpected error occurred"));
+                .body(new ErrorResponse(500, message));
     }
 
     // ── Error payload records ──────────────────────────────

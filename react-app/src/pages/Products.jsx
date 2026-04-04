@@ -1,8 +1,53 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import ProductCard from '../components/ProductCard';
 
 const EMPTY_FORM = { name: '', price: '', category: 'vegetables', image: '', rating: '', desc: '', farmer: 'OrganicFarm', certified: true };
+
+// ── Price Prediction Database ────────────────────────────────────────────────
+const PRICE_DATABASE = {
+    // Vegetables
+    tomato: { min: 30, max: 80 }, potato: { min: 20, max: 50 }, onion: { min: 25, max: 70 },
+    carrot: { min: 30, max: 60 }, brinjal: { min: 25, max: 55 }, cauliflower: { min: 30, max: 70 },
+    cabbage: { min: 20, max: 50 }, spinach: { min: 25, max: 60 }, cucumber: { min: 20, max: 45 },
+    capsicum: { min: 40, max: 100 }, beans: { min: 40, max: 90 }, peas: { min: 50, max: 120 },
+    ladyfinger: { min: 30, max: 60 }, okra: { min: 30, max: 60 }, beetroot: { min: 25, max: 55 },
+    radish: { min: 20, max: 45 }, drumstick: { min: 30, max: 80 }, bitter: { min: 30, max: 70 },
+    gourd: { min: 20, max: 50 }, pumpkin: { min: 20, max: 45 }, mushroom: { min: 80, max: 200 },
+    broccoli: { min: 60, max: 150 }, lettuce: { min: 40, max: 90 }, garlic: { min: 100, max: 300 },
+    ginger: { min: 80, max: 200 }, chilli: { min: 40, max: 100 }, corn: { min: 25, max: 60 },
+    // Fruits
+    apple: { min: 80, max: 200 }, banana: { min: 30, max: 60 }, mango: { min: 60, max: 200 },
+    orange: { min: 40, max: 100 }, grapes: { min: 50, max: 150 }, strawberry: { min: 100, max: 300 },
+    pomegranate: { min: 80, max: 200 }, papaya: { min: 30, max: 70 }, watermelon: { min: 15, max: 40 },
+    guava: { min: 40, max: 90 }, lemon: { min: 60, max: 150 }, coconut: { min: 30, max: 60 },
+    pineapple: { min: 40, max: 100 }, kiwi: { min: 150, max: 400 }, avocado: { min: 150, max: 400 },
+    // Grains
+    rice: { min: 50, max: 150 }, wheat: { min: 30, max: 80 }, millet: { min: 40, max: 100 },
+    ragi: { min: 50, max: 120 }, jowar: { min: 40, max: 90 }, oats: { min: 80, max: 200 },
+    quinoa: { min: 200, max: 500 }, barley: { min: 40, max: 100 },
+    // Dairy & Other
+    milk: { min: 40, max: 80 }, ghee: { min: 400, max: 800 }, butter: { min: 200, max: 500 },
+    curd: { min: 30, max: 60 }, paneer: { min: 200, max: 400 }, cheese: { min: 250, max: 600 },
+    honey: { min: 150, max: 500 }, jaggery: { min: 60, max: 150 }, turmeric: { min: 100, max: 300 },
+    tea: { min: 150, max: 500 }, coffee: { min: 200, max: 600 },
+};
+
+const CATEGORY_FALLBACK = {
+    vegetables: { min: 20, max: 100 }, fruits: { min: 40, max: 200 },
+    grains: { min: 40, max: 150 }, dairy: { min: 40, max: 400 }, other: { min: 30, max: 300 },
+};
+
+function predictPrice(name, category) {
+    if (!name || !name.trim()) return null;
+    const lower = name.toLowerCase().trim();
+    // Exact match or partial match in database
+    for (const [key, range] of Object.entries(PRICE_DATABASE)) {
+        if (lower.includes(key) || key.includes(lower)) return range;
+    }
+    // Fallback to category range
+    return CATEGORY_FALLBACK[category] || CATEGORY_FALLBACK.other;
+}
 
 export default function Products() {
     const { getProducts, addProduct, updateProduct, deleteProduct, user } = useApp();
@@ -188,6 +233,7 @@ export default function Products() {
                                     <div className="form-group">
                                         <label className="form-label">Price (₹/kg) *</label>
                                         <input className="form-control" type="number" required min="1" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="e.g. 60" />
+                                        <PriceSuggestion name={form.name} category={form.category} currentPrice={form.price} />
                                     </div>
                                 </div>
                                 <div className="form-row">
@@ -228,5 +274,47 @@ export default function Products() {
                 </div>
             )}
         </>
+    );
+}
+
+// ── Price Suggestion Component ───────────────────────────────────────────────
+function PriceSuggestion({ name, category, currentPrice }) {
+    const prediction = useMemo(() => predictPrice(name, category), [name, category]);
+    const price = Number(currentPrice);
+
+    if (!prediction) return null;
+    // Hide if user entered a valid price within range
+    if (price > 0 && price >= prediction.min * 0.7 && price <= prediction.max * 1.5) return null;
+
+    return (
+        <div style={{
+            background: 'linear-gradient(135deg, rgba(45,106,79,0.06), rgba(116,198,157,0.1))',
+            border: '1px solid rgba(45,106,79,0.15)', borderRadius: '8px',
+            padding: '0.6rem 0.85rem', marginTop: '0.5rem',
+            display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.82rem',
+        }}>
+            <i className="fas fa-lightbulb" style={{ color: '#ffc107', fontSize: '1rem', flexShrink: 0 }}></i>
+            <div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: '0.15rem' }}>Suggested Price Range</div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--primary)' }}>₹{prediction.min}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>
+                    <span style={{ fontWeight: 700, color: 'var(--primary)' }}>₹{prediction.max}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>per kg</span>
+                </div>
+                {price > 0 && price < prediction.min * 0.7 && (
+                    <small style={{ color: '#dc3545', fontWeight: 500 }}>
+                        <i className="fas fa-exclamation-triangle" style={{ marginRight: '0.25rem' }}></i>
+                        Price seems too low
+                    </small>
+                )}
+                {price > prediction.max * 1.5 && (
+                    <small style={{ color: '#fd7e14', fontWeight: 500 }}>
+                        <i className="fas fa-exclamation-triangle" style={{ marginRight: '0.25rem' }}></i>
+                        Price seems high for this product
+                    </small>
+                )}
+            </div>
+        </div>
     );
 }

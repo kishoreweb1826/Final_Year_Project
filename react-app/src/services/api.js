@@ -39,6 +39,12 @@ async function handleResponse(res) {
     throw new Error(errorMsg);
 }
 
+/** Error check for network failures (Backend Offline) */
+export function isNetworkError(err) {
+    const msg = String(err.message || err).toLowerCase();
+    return msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed');
+}
+
 // ═══════════════════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════════════════
@@ -226,6 +232,35 @@ export const aiApi = {
         fetch(`${API_BASE}/ai-tools/soil-analysis`, options('POST', data)).then(handleResponse),
 };
 
+// ═══════════════════════════════════════════════════════
+//  ADMIN
+// ═══════════════════════════════════════════════════════
+export const adminApi = {
+    /** Get all pending farmer registrations with enriched details */
+    getPendingFarmers: () =>
+        fetch(`${API_BASE}/admin/pending-farmers`, options('GET')).then(handleResponse),
+
+    /** Get all farmers (approved + pending) */
+    getAllFarmers: () =>
+        fetch(`${API_BASE}/admin/all-farmers`, options('GET')).then(handleResponse),
+
+    /** Approve a farmer by user ID */
+    approveFarmer: (userId) =>
+        fetch(`${API_BASE}/admin/approve-farmer/${userId}`, options('POST')).then(handleResponse),
+
+    /** Reject a farmer by user ID */
+    rejectFarmer: (userId) =>
+        fetch(`${API_BASE}/admin/reject-farmer/${userId}`, options('POST')).then(handleResponse),
+
+    /** Get admin dashboard stats */
+    getStats: () =>
+        fetch(`${API_BASE}/admin/stats`, options('GET')).then(handleResponse),
+
+    /** Get certificate file URL for viewing */
+    getCertificateUrl: (filename) =>
+        `${API_BASE}/admin/certificate/${encodeURIComponent(filename)}`,
+};
+
 /** Normalise a backend Product response to the shape the UI expects */
 export function normaliseProduct(p) {
     return {
@@ -241,3 +276,4 @@ export function normaliseProduct(p) {
         _created: new Date(p.createdAt).getTime(),
     };
 }
+

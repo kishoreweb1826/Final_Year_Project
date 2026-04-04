@@ -62,7 +62,8 @@ public class AIToolLog {
         CROP_RECOMMENDATION,
         RESOURCE_MANAGEMENT,
         WEATHER_FORECAST,
-        SOIL_ANALYSIS
+        SOIL_ANALYSIS,
+        SOIL_ENVIRONMENT_ANALYZER
         // Add more AI tools here as they are integrated
     }
 }
