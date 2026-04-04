@@ -5,12 +5,37 @@
  * When running on Vite dev server (port 5173): uses absolute 'http://localhost:8080/api'
  */
 
-export const API_BASE = (import.meta.env.VITE_API_URL || 'https://final-year-project-2-fp45.onrender.com') + '/api';
+const getApiBase = () => {
+    let url = import.meta.env.VITE_API_URL || 'https://final-year-project-2-fp45.onrender.com';
+    if (!import.meta.env.VITE_API_URL) {
+        console.warn('VITE_API_URL is not defined. Falling back to default:', url);
+    }
+    // Remove all trailing slashes first
+    url = url.replace(/\/+$/, '');
+    
+    // If it already ends with /api, return as is
+    if (url.endsWith('/api')) return url;
+    
+    // Otherwise append /api
+    return `${url}/api`;
+};
+
+export const API_BASE = getApiBase();
+console.log('API_BASE Resolved to:', API_BASE);
 
 
 /** Get the stored JWT token from localStorage or sessionStorage */
-function getToken() {
+export function getToken() {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
+/** Get fetch options for manual calls (handling auth header) */
+export function getManualOptions(method = 'POST', isMultipart = false) {
+    const token = getToken();
+    const headers = {};
+    if (!isMultipart) headers['Content-Type'] = 'application/json';
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return { method, headers };
 }
 
 /** Build standard fetch options with JSON body + auth header */

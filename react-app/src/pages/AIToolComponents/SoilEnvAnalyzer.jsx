@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE } from '../../services/api';
+import { API_BASE, getManualOptions } from '../../services/api';
 import VoiceExplainer from './VoiceExplainer';
 
 export default function SoilEnvAnalyzer() {
@@ -21,7 +21,7 @@ export default function SoilEnvAnalyzer() {
             if (image) formData.append('image', image);
 
             const res = await fetch(`${API_BASE}/ai-tools/analyze`, {
-                method: "POST",
+                ...getManualOptions('POST', true),
                 body: formData
             });
 
