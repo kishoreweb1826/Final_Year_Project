@@ -73,10 +73,13 @@ function AdminFarmerVerification() {
     };
 
     const handleReject = async (id, name) => {
-        if (!confirm(`Reject farmer "${name}"? Their account will be disabled.`)) return;
+        const reason = prompt(`Please enter a reason for rejecting farmer "${name}":`, "Certificate is invalid or expired.");
+        if (reason === null) return; // User clicked Cancel
+        if (!reason.trim()) return showNotification('A reason is required to reject a farmer', 'warning');
+
         setActionLoading(id);
         try {
-            await adminApi.rejectFarmer(id);
+            await adminApi.rejectFarmer(id, reason);
             showNotification(`❌ ${name} has been rejected`, 'info');
             await loadFarmers();
         } catch (err) {
@@ -236,6 +239,12 @@ function AdminFarmerVerification() {
                                                         >
                                                             <i className="fas fa-file-download"></i> View Certificate
                                                         </a>
+                                                    </div>
+                                                )}
+                                                {f.rejectionReason && (
+                                                    <div className="admin-detail-row">
+                                                        <span className="admin-detail-label" style={{ color: '#dc3545' }}>Rejection Reason</span>
+                                                        <span style={{ color: '#dc3545', fontWeight: 600 }}>{f.rejectionReason}</span>
                                                     </div>
                                                 )}
                                                 {f.createdAt && (

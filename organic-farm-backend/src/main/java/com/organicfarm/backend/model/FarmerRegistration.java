@@ -111,6 +111,9 @@ public class FarmerRegistration {
     @Builder.Default
     private RegistrationStatus status = RegistrationStatus.PENDING;
 
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
     /** FK to User account once approved and account created */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

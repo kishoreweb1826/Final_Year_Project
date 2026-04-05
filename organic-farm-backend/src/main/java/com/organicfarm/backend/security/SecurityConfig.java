@@ -113,6 +113,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/farmers/register").permitAll()
 
+                        // ── Admin-only endpoints ─────────────────────────────
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         // ── All other /api/** requests require authentication ──
                         .anyRequest().authenticated())
 

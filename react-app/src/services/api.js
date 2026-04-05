@@ -273,9 +273,9 @@ export const adminApi = {
     approveFarmer: (userId) =>
         fetch(`${API_BASE}/admin/approve-farmer/${userId}`, options('POST')).then(handleResponse),
 
-    /** Reject a farmer by user ID */
-    rejectFarmer: (userId) =>
-        fetch(`${API_BASE}/admin/reject-farmer/${userId}`, options('POST')).then(handleResponse),
+    /** Reject a farmer by user ID with a reason */
+    rejectFarmer: (userId, reason) =>
+        fetch(`${API_BASE}/admin/reject-farmer/${userId}`, options('POST', { reason })).then(handleResponse),
 
     /** Get admin dashboard stats */
     getStats: () =>

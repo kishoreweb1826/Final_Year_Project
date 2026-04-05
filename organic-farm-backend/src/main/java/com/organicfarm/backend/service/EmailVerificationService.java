@@ -189,6 +189,64 @@ public class EmailVerificationService {
         return new VerificationDTO.StatusResponse(user.isEmailVerified(), normalizedEmail);
     }
 
+    /**
+     * Sends a notification to the farmer that their account has been approved.
+     */
+    public void sendApprovalEmail(String toEmail, String userName) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Congratulations! Your Farmer account is Approved 🌿");
+            
+            String html = """
+                <div style="font-family:Arial,sans-serif;padding:20px;color:#333;">
+                    <h2 style="color:#2d6a4f;">Welcome to OrganicFarm!</h2>
+                    <p>Hi <b>%s</b>,</p>
+                    <p>Great news! Our administrators have reviewed your certification and <b>approved</b> your farmer account.</p>
+                    <p>You can now log in to your dashboard to start listing your organic products for our community.</p>
+                    <div style="margin:25px 0;"><a href="https://final-year-project-pi-eight.vercel.app/login" style="background:#2d6a4f;color:white;padding:12px 25px;text-decoration:none;border-radius:5px;">Log In Now</a></div>
+                    <p style="color:#666;font-size:13px;">Thank you for contributing to a sustainable future.</p>
+                </div>
+                """.formatted(userName);
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send approval email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    /**
+     * Sends a notification to the farmer that their account has been rejected.
+     */
+    public void sendRejectionEmail(String toEmail, String userName, String reason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Update on your Farmer Registration 🌿");
+            
+            String html = """
+                <div style="font-family:Arial,sans-serif;padding:20px;color:#333;">
+                    <h2 style="color:#dc3545;">Update on your Registration</h2>
+                    <p>Hi <b>%s</b>,</p>
+                    <p>Thank you for your interest in OrganicFarm. After reviewing your application, we are unable to approve your farmer status at this time.</p>
+                    <p style="background:#fff5f5;padding:15px;border-left:4px solid #dc3545;margin:20px 0;">
+                        <b>Reason for Rejection:</b><br/>%s
+                    </p>
+                    <p>If you believe this is an error or if you have updated documents, please contact our support team or reply to this email.</p>
+                    <p style="color:#666;font-size:13px;">Warm regards,<br/>The OrganicFarm Team</p>
+                </div>
+                """.formatted(userName, reason);
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     //  Internal helpers
     // ─────────────────────────────────────────────────────────────────────────

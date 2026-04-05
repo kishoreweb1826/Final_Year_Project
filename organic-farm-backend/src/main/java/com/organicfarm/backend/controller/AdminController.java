@@ -1,16 +1,15 @@
 package com.organicfarm.backend.controller;
 
+import com.organicfarm.backend.dto.AdminDTO;
 import com.organicfarm.backend.model.FarmerRegistration;
 import com.organicfarm.backend.model.User;
 import com.organicfarm.backend.repository.FarmerRegistrationRepository;
 import com.organicfarm.backend.repository.UserRepository;
+import com.organicfarm.backend.service.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +30,7 @@ public class AdminController {
 
     private final UserRepository userRepository;
     private final FarmerRegistrationRepository farmerRegistrationRepository;
+    private final EmailVerificationService emailVerificationService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -72,6 +72,7 @@ public class AdminController {
                 map.put("certificateFilePath", reg.getCertificateFilePath());
                 map.put("cropTypes", reg.getCropTypes());
                 map.put("registrationStatus", reg.getStatus().name());
+                map.put("rejectionReason", reg.getRejectionReason() != null ? reg.getRejectionReason() : "");
             });
 
             return map;
@@ -126,31 +127,39 @@ public class AdminController {
         farmerRegistrationRepository.findByEmail(user.getEmail()).ifPresent(reg -> {
             reg.setStatus(FarmerRegistration.RegistrationStatus.APPROVED);
             farmerRegistrationRepository.save(reg);
+            
+            // Notify the farmer
+            emailVerificationService.sendApprovalEmail(user.getEmail(), user.getName());
         });
 
         return ResponseEntity.ok(Map.of("message", "Farmer " + user.getName() + " has been approved successfully"));
     }
 
     /**
-         * POST /api/admin/reject-farmer/{id}
-     * Rejects a farmer and disables their account.
-     * Also updates the registration status to REJECTED.
+     * Rejects a farmer but DOES NOT disable their account entirely.
+     * Updates the registration status to REJECTED and saves a reason.
      */
     @PostMapping("/reject-farmer/{id}")
-    public ResponseEntity<Map<String, String>> rejectFarmer(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> rejectFarmer(
+            @PathVariable Long id,
+            @RequestBody AdminDTO.RejectRequest req) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setFarmerApproved(false);
-        user.setEnabled(false);
+        // We keep the account enabled so they can log in to see the reason
         userRepository.save(user);
 
         // Also update registration status
         farmerRegistrationRepository.findByEmail(user.getEmail()).ifPresent(reg -> {
             reg.setStatus(FarmerRegistration.RegistrationStatus.REJECTED);
+            reg.setRejectionReason(req.getReason());
             farmerRegistrationRepository.save(reg);
+            
+            // Notify the farmer
+            emailVerificationService.sendRejectionEmail(user.getEmail(), user.getName(), req.getReason());
         });
 
-        return ResponseEntity.ok(Map.of("message", "Farmer " + user.getName() + " has been rejected"));
+        return ResponseEntity.ok(Map.of("message", "Farmer " + user.getName() + " has been rejected with reason: " + req.getReason()));
     }
 
     /**

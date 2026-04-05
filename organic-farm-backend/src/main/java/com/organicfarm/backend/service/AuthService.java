@@ -2,7 +2,9 @@ package com.organicfarm.backend.service;
 
 import com.organicfarm.backend.dto.AuthDTO;
 import com.organicfarm.backend.exception.DuplicateResourceException;
+import com.organicfarm.backend.model.FarmerRegistration;
 import com.organicfarm.backend.model.User;
+import com.organicfarm.backend.repository.FarmerRegistrationRepository;
 import com.organicfarm.backend.repository.UserRepository;
 import com.organicfarm.backend.security.JwtUtils;
 import com.organicfarm.backend.security.UserDetailsImpl;
@@ -24,6 +26,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final EmailVerificationService emailVerificationService;
+    private final FarmerRegistrationRepository farmerRegistrationRepository;
 
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest req) {
         String normalizedEmail = req.getEmail().trim().toLowerCase();
@@ -34,11 +37,21 @@ public class AuthService {
         // Block login for unapproved farmers
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        
         if (user.getRole() == User.UserRole.FARMER && !Boolean.TRUE.equals(user.getFarmerApproved())) {
-            throw new com.organicfarm.backend.exception.BusinessException(
-                    "Your farmer application is currently being reviewed by our authorities. " +
-                    "You will be able to login once your certificate is approved. " +
-                    "Please check back later or contact support for more information.");
+            String message = "Your farmer application is currently being reviewed by our authorities. " +
+                             "You will be able to login once your certificate is approved. " +
+                             "Please check back later or contact support for more information.";
+            
+            // Check if there is a rejection reason
+            var registration = farmerRegistrationRepository.findByEmail(normalizedEmail);
+            if (registration.isPresent() && registration.get().getStatus() == FarmerRegistration.RegistrationStatus.REJECTED) {
+                message = "Your farmer application was rejected. Reason: " + 
+                          (registration.get().getRejectionReason() != null ? registration.get().getRejectionReason() : "Incomplete documentation") + 
+                          ". Please contact support to resolve this.";
+            }
+            
+            throw new com.organicfarm.backend.exception.BusinessException(message);
         }
 
         String token = jwtUtils.generateToken(auth);
