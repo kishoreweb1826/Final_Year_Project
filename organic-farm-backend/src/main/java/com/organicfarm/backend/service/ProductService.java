@@ -9,9 +9,6 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -27,15 +24,17 @@ public class ProductService {
         };
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
-        Product.ProductCategory cat = null;
+        String cat = null;
         if (category != null && !category.isBlank() && !"all".equalsIgnoreCase(category)) {
             try {
-                cat = Product.ProductCategory.valueOf(category.toUpperCase());
+                cat = Product.ProductCategory.valueOf(category.toUpperCase()).name();
             } catch (IllegalArgumentException ignored) {
             }
         }
 
-        return productRepository.search(cat, (search != null && !search.isBlank()) ? search : null, pageable)
+        String searchParam = (search != null && !search.isBlank()) ? search : null;
+
+        return productRepository.search(cat, searchParam, pageable)
                 .map(ProductDTO.Response::from);
     }
 
@@ -80,7 +79,7 @@ public class ProductService {
     public void delete(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
-        product.setActive(false); // soft delete
+        product.setActive(false);
         productRepository.save(product);
     }
 }
