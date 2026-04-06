@@ -13,24 +13,27 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-        List<Product> findByActiveTrue();
+    List<Product> findByActiveTrue();
 
-        Page<Product> findByActiveTrue(Pageable pageable);
+    Page<Product> findByActiveTrue(Pageable pageable);
 
-        List<Product> findByCategoryAndActiveTrue(Product.ProductCategory category);
+    List<Product> findByCategoryAndActiveTrue(Product.ProductCategory category);
 
-        @Query(value = """
-                        SELECT * FROM products p
-                        WHERE p.active = true
-                          AND (CAST(:category AS text) IS NULL OR p.category = CAST(:category AS text))
-                          AND (CAST(:search AS text) IS NULL
-                               OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%'))
-                               OR LOWER(p.farmer_name) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')))
-                        """, countQuery = "SELECT COUNT(*) FROM products WHERE active = true", nativeQuery = true)
-        Page<Product> search(
-                        @Param("category") String category,
-                        @Param("search") String search,
-                        Pageable pageable);
+    @Query(value = """
+            SELECT * FROM products p
+            WHERE p.active = true
+              AND (CAST(:category AS text) IS NULL OR p.category = CAST(:category AS text))
+              AND (CAST(:search AS text) IS NULL
+                   OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%'))
+                   OR LOWER(p.farmer_name) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')))
+            ORDER BY p.created_at DESC
+            """,
+            countQuery = "SELECT COUNT(*) FROM products WHERE active = true",
+            nativeQuery = true)
+    Page<Product> search(
+            @Param("category") String category,
+            @Param("search") String search,
+            Pageable pageable);
 
-        List<Product> findByFarmer_IdAndActiveTrue(Long farmerId);
+    List<Product> findByFarmer_IdAndActiveTrue(Long farmerId);
 }

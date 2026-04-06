@@ -16,13 +16,7 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     public Page<ProductDTO.Response> getProducts(String search, String category, String sort, int page, int size) {
-        Sort sortObj = switch (sort != null ? sort : "newest") {
-            case "price-low" -> Sort.by("price").ascending();
-            case "price-high" -> Sort.by("price").descending();
-            case "rating" -> Sort.by("rating").descending();
-            default -> Sort.by("createdAt").descending();
-        };
-        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Pageable pageable = PageRequest.of(page, size);
 
         String cat = null;
         if (category != null && !category.isBlank() && !"all".equalsIgnoreCase(category)) {
