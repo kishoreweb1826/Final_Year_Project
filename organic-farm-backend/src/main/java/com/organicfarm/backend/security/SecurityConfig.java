@@ -74,38 +74,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ── Static frontend assets (React build output) ───────
-                        .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/assets/**",
-                                "/*.js",
-                                "/*.css",
-                                "/*.ico",
-                                "/*.png",
-                                "/*.svg",
-                                "/*.webp",
-                                "/*.woff",
-                                "/*.woff2",
-                                "/*.ttf")
-                        .permitAll()
-
-                        // ── React Router client-side pages ────────────────────
-                        .requestMatchers(
-                                "/home",
-                                "/products",
-                                "/cart",
-                                "/checkout",
-                                "/order-success",
-                                "/orders",
-                                "/login",
-                                "/farmers",
-                                "/ai-tools",
-                                "/about",
-                                "/contact",
-                                "/dashboard",
-                                "/dashboard/**")
-                        .permitAll()
+                        // ── Health / root ──────────────────────────────────
+                        .requestMatchers("/").permitAll()
 
                         // ── Public REST API endpoints ─────────────────────────
                         .requestMatchers("/api/auth/**").permitAll()
@@ -118,7 +88,7 @@ public class SecurityConfig {
                         // ── Admin-only endpoints ─────────────────────────────
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // ── All other /api/** requests require authentication ──
+                        // ── All other requests require authentication ────────
                         .anyRequest().authenticated())
 
                 .authenticationProvider(authenticationProvider())

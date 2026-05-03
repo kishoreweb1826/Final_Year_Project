@@ -1,43 +1,20 @@
 package com.organicfarm.backend.controller;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-/**
- * SPA Fallback Controller — forwards React Router paths to index.html.
- *
- * IMPORTANT: Only list EXPLICIT frontend routes here.
- * Do NOT use catch-all wildcards like "/{path}/**" — they intercept
- * /assets/*.js and /assets/*.css causing MIME type errors.
- *
- * Spring Boot automatically serves /assets/** from src/main/resources/static/
- * so we don't need to handle those here.
- */
-@Controller
-public class SpaFallbackController {
+import java.util.Map;
 
-    @RequestMapping(value = {
-            "/home",
-            "/products",
-            "/cart",
-            "/checkout",
-            "/order-success",
-            "/orders",
-            "/orders/{id}",
-            "/login",
-            "/farmers",
-            "/ai-tools",
-            "/about",
-            "/contact",
-            "/dashboard",
-            "/dashboard/wishlist",
-            "/dashboard/addresses",
-            "/dashboard/payments",
-            "/dashboard/settings",
-            "/dashboard/security",
-            "/dashboard/notifications"
-    })
-    public String forwardToIndex() {
-        return "forward:/index.html";
+@RestController
+public class HealthController {
+
+    @GetMapping("/")
+    public ResponseEntity<Map<String, String>> root() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "service", "OrganicFarm API",
+                "docs", "/api/products"
+        ));
     }
 }
