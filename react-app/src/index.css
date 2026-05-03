@@ -459,6 +459,7 @@ img {
 /* ===== GRID ===== */
 .grid { display: grid; gap: 1.5rem; }
 .products-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: stretch; }
+.home-products-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(4, 1fr); align-items: stretch; }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }

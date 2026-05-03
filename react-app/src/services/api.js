@@ -6,22 +6,15 @@
  */
 
 const getApiBase = () => {
-    let url = import.meta.env.VITE_API_URL || 'https://final-year-project-2-fp45.onrender.com';
-    if (!import.meta.env.VITE_API_URL) {
-        console.warn('VITE_API_URL is not defined. Falling back to default:', url);
-    }
-    // Remove all trailing slashes first
+    let url = import.meta.env.VITE_API_URL
+        || (import.meta.env.DEV ? 'http://localhost:8080' : 'https://final-year-project-2-fp45.onrender.com');
     url = url.replace(/\/+$/, '');
-    
-    // If it already ends with /api, return as is
     if (url.endsWith('/api')) return url;
-    
-    // Otherwise append /api
     return `${url}/api`;
 };
 
 export const API_BASE = getApiBase();
-console.log('API_BASE Resolved to:', API_BASE);
+
 
 
 /** Get the stored JWT token from localStorage or sessionStorage */
