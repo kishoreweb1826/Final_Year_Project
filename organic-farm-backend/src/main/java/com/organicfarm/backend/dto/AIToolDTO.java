@@ -17,12 +17,17 @@ public class AIToolDTO {
 
     @Data
     public static class CropRequest {
+        private Double nitrogen;
+        private Double phosphorus;
         private Double potassium;
         private Double temperature;
         private Double humidity;
         private Double ph;
         private Double rainfall;
         private String location;
+        private String soilType;
+        private String season;
+        private String waterAvailability;
     }
 
     @Data
@@ -140,17 +145,24 @@ public class AIToolDTO {
         private String soilType;
         private Double organicMatter;
         private Double soilPh;
+        private Double nitrogen;
+        private Double phosphorus;
+        private Double potassium;
         private Double ec;
         private Double cec;
+        private Double moisture;
         private String previousCrop;
+        private String season;
     }
 
     @Data
     public static class SoilResponse {
         private Integer score;
+        private String healthStatus;
         private List<String> issues;
         private List<String> recommendations;
         private List<String> suitableCrops;
+        private Map<String, String> nutrientLevels;
         private String modelVersion;
     }
 

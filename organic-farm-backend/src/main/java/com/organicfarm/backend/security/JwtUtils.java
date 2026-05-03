@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -23,7 +24,14 @@ public class JwtUtils {
     private long jwtExpirationMs;
 
     private Key signingKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        try {
+            // SHA-256 hash guarantees exactly 32 bytes (256 bits) — satisfies RFC 7518 §3.2
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            return Keys.hmacShaKeyFor(hash);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
     }
 
     public String generateToken(Authentication authentication) {

@@ -34,43 +34,36 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedAdminUser() {
-        if (userRepository.existsByEmail("admin@organicfarm.com"))
-            return;
+        upsertDemoUser("Admin", "admin@organicfarm.com", "Admin@123",
+                User.UserRole.ADMIN, true);
+        upsertDemoUser("Green Valley Farm", "farmer@organicfarm.com", "Farmer@123",
+                User.UserRole.FARMER, true);
+        upsertDemoUser("Demo Customer", "customer@organicfarm.com", "Customer@123",
+                User.UserRole.CUSTOMER, true);
+    }
 
-        User admin = User.builder()
-                .name("Admin")
-                .email("admin@organicfarm.com")
-                .password(passwordEncoder.encode("Admin@123"))
-                .role(User.UserRole.ADMIN)
-                .emailVerified(true)
-                .farmerApproved(true)
-                .build();
-        userRepository.save(admin);
-        log.info("✅ Admin user seeded: admin@organicfarm.com / Admin@123");
-
-        // Demo farmer account
-        User farmer = User.builder()
-                .name("Green Valley Farm")
-                .email("farmer@organicfarm.com")
-                .password(passwordEncoder.encode("Farmer@123"))
-                .role(User.UserRole.FARMER)
-                .emailVerified(true)
-                .farmerApproved(true)
-                .build();
-        userRepository.save(farmer);
-        log.info("✅ Demo farmer seeded: farmer@organicfarm.com / Farmer@123");
-
-        // Demo customer
-        User customer = User.builder()
-                .name("Demo Customer")
-                .email("customer@organicfarm.com")
-                .password(passwordEncoder.encode("Customer@123"))
-                .role(User.UserRole.CUSTOMER)
-                .emailVerified(true)
-                .farmerApproved(true)
-                .build();
-        userRepository.save(customer);
-        log.info("✅ Demo customer seeded: customer@organicfarm.com / Customer@123");
+    private void upsertDemoUser(String name, String email, String rawPassword,
+                                 User.UserRole role, boolean farmerApproved) {
+        var existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) {
+            User user = existing.get();
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setEmailVerified(true);
+            user.setFarmerApproved(farmerApproved);
+            userRepository.save(user);
+            log.info("🔄 Demo user updated: {} / {}", email, rawPassword);
+        } else {
+            User user = User.builder()
+                    .name(name)
+                    .email(email)
+                    .password(passwordEncoder.encode(rawPassword))
+                    .role(role)
+                    .emailVerified(true)
+                    .farmerApproved(farmerApproved)
+                    .build();
+            userRepository.save(user);
+            log.info("✅ Demo user seeded: {} / {}", email, rawPassword);
+        }
     }
 
     private void seedProducts() {

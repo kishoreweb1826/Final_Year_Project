@@ -56,49 +56,123 @@ public class AIToolService {
     }
 
     private AIToolDTO.CropResponse ruleBasedCropRecommendation(AIToolDTO.CropRequest req) {
-        List<AIToolDTO.CropResult> crops = new ArrayList<>();
-        AIToolDTO.CropResult r = new AIToolDTO.CropResult();
-        r.setName("Rice");
-        r.setConfidence(0.92);
-        r.setReason("Optimal potassium and high rainfall");
-        crops.add(r);
+        double n = req.getNitrogen() != null ? req.getNitrogen() : 50;
+        double p = req.getPhosphorus() != null ? req.getPhosphorus() : 50;
+        double k = req.getPotassium() != null ? req.getPotassium() : 50;
+        double temp = req.getTemperature() != null ? req.getTemperature() : 25;
+        double hum = req.getHumidity() != null ? req.getHumidity() : 60;
+        double ph = req.getPh() != null ? req.getPh() : 6.5;
+        double rain = req.getRainfall() != null ? req.getRainfall() : 100;
+        String season = req.getSeason() != null ? req.getSeason().toLowerCase() : "kharif";
+        String soil = req.getSoilType() != null ? req.getSoilType().toLowerCase() : "loamy";
 
-        AIToolDTO.CropResult w = new AIToolDTO.CropResult();
-        w.setName("Wheat");
-        w.setConfidence(0.75);
-        w.setReason("Good temperature and pH levels");
-        AIToolDTO.CropResult c = new AIToolDTO.CropResult();
-        c.setName("Cotton");
-        c.setConfidence(0.68);
-        c.setReason("Suitable climate conditions");
-        crops.add(w);
-        crops.add(c);
+        // Score each crop based on multiple parameters
+        record CropScore(String name, double score, String reason) {}
+        List<CropScore> scores = new ArrayList<>();
 
-        if (req.getRainfall() != null && req.getRainfall() > 200) {
-            crops.get(0).setConfidence(0.95);
-            crops.get(0).setReason("High rainfall ideal for rice");
-        } else if (req.getTemperature() != null && req.getTemperature() < 25) {
-            crops.set(0, w);
-            w.setConfidence(0.90);
-            w.setReason("Cool temperature perfect for wheat");
-        } else if (req.getPh() != null && req.getPh() > 7) {
-            crops.set(0, c);
-            c.setConfidence(0.88);
-            c.setReason("Alkaline soil suits cotton");
-        }
-        crops.sort(Comparator.comparingDouble(AIToolDTO.CropResult::getConfidence).reversed());
+        // Rice — high rain, warm, acidic-neutral pH
+        double riceScore = 0.5;
+        if (rain > 150) riceScore += 0.2;
+        if (temp >= 22 && temp <= 35) riceScore += 0.1;
+        if (ph >= 5.5 && ph <= 7.0) riceScore += 0.1;
+        if (n > 40) riceScore += 0.05;
+        if (season.contains("kharif")) riceScore += 0.05;
+        if (soil.contains("clay") || soil.contains("loam")) riceScore += 0.05;
+        scores.add(new CropScore("Rice", Math.min(riceScore, 0.98), "Warm climate, high rainfall, nitrogen-rich soil"));
 
-        String soilHealth = (req.getPh() != null && req.getPh() >= 6 && req.getPh() <= 7.5)
-                ? "Good"
-                : "Needs Improvement";
+        // Wheat — cool, moderate rain, neutral pH
+        double wheatScore = 0.5;
+        if (temp >= 10 && temp <= 25) wheatScore += 0.2;
+        if (rain >= 50 && rain <= 150) wheatScore += 0.1;
+        if (ph >= 6.0 && ph <= 7.5) wheatScore += 0.1;
+        if (p > 40) wheatScore += 0.05;
+        if (season.contains("rabi")) wheatScore += 0.1;
+        scores.add(new CropScore("Wheat", Math.min(wheatScore, 0.98), "Cool temperatures, moderate moisture, good phosphorus"));
+
+        // Cotton — warm, alkaline, low rain
+        double cottonScore = 0.4;
+        if (temp >= 25 && temp <= 40) cottonScore += 0.15;
+        if (ph > 7.0) cottonScore += 0.15;
+        if (rain < 120) cottonScore += 0.1;
+        if (k > 50) cottonScore += 0.1;
+        if (soil.contains("black") || soil.contains("clay")) cottonScore += 0.1;
+        scores.add(new CropScore("Cotton", Math.min(cottonScore, 0.98), "Warm climate, alkaline soil, potassium-rich"));
+
+        // Maize — moderate temp, well-drained
+        double maizeScore = 0.45;
+        if (temp >= 20 && temp <= 32) maizeScore += 0.15;
+        if (ph >= 5.5 && ph <= 7.5) maizeScore += 0.1;
+        if (n > 60) maizeScore += 0.1;
+        if (rain >= 60 && rain <= 200) maizeScore += 0.1;
+        if (soil.contains("loam") || soil.contains("sandy")) maizeScore += 0.05;
+        scores.add(new CropScore("Maize", Math.min(maizeScore, 0.98), "Moderate temperature, nitrogen-rich, well-drained soil"));
+
+        // Sugarcane — tropical, heavy water
+        double sugarcaneScore = 0.35;
+        if (temp >= 25 && temp <= 38) sugarcaneScore += 0.15;
+        if (rain > 150) sugarcaneScore += 0.15;
+        if (ph >= 5.0 && ph <= 8.0) sugarcaneScore += 0.05;
+        if (n > 50 && k > 50) sugarcaneScore += 0.1;
+        if (soil.contains("loam") || soil.contains("clay")) sugarcaneScore += 0.1;
+        scores.add(new CropScore("Sugarcane", Math.min(sugarcaneScore, 0.98), "Tropical climate, abundant water, nutrient-rich"));
+
+        // Groundnut — sandy, warm, low rain
+        double groundnutScore = 0.4;
+        if (temp >= 25 && temp <= 35) groundnutScore += 0.1;
+        if (ph >= 6.0 && ph <= 7.0) groundnutScore += 0.1;
+        if (rain >= 50 && rain <= 130) groundnutScore += 0.1;
+        if (soil.contains("sandy") || soil.contains("red")) groundnutScore += 0.15;
+        if (p > 30) groundnutScore += 0.05;
+        scores.add(new CropScore("Groundnut", Math.min(groundnutScore, 0.98), "Sandy soil, warm climate, moderate moisture"));
+
+        // Pulses (Moong/Lentil) — low water, fixes nitrogen
+        double pulseScore = 0.4;
+        if (temp >= 20 && temp <= 30) pulseScore += 0.1;
+        if (rain < 100) pulseScore += 0.15;
+        if (ph >= 6.0 && ph <= 7.5) pulseScore += 0.1;
+        if (n < 40) pulseScore += 0.1; // pulses fix nitrogen
+        if (season.contains("rabi") || season.contains("zaid")) pulseScore += 0.05;
+        scores.add(new CropScore("Pulses (Moong/Lentil)", Math.min(pulseScore, 0.98), "Low nitrogen soil (self-fixing), moderate climate"));
+
+        // Vegetables — moderate everything
+        double vegScore = 0.45;
+        if (temp >= 15 && temp <= 30) vegScore += 0.1;
+        if (ph >= 6.0 && ph <= 7.0) vegScore += 0.1;
+        if (n > 40 && p > 30 && k > 30) vegScore += 0.15;
+        if (soil.contains("loam")) vegScore += 0.1;
+        scores.add(new CropScore("Vegetables", Math.min(vegScore, 0.98), "Nutrient-rich loamy soil, balanced pH"));
+
+        // Sort by score descending, take top 5
+        scores.sort((a, b) -> Double.compare(b.score(), a.score()));
+        List<AIToolDTO.CropResult> crops = scores.stream().limit(5).map(s -> {
+            AIToolDTO.CropResult cr = new AIToolDTO.CropResult();
+            cr.setName(s.name());
+            cr.setConfidence(Math.round(s.score() * 100.0) / 100.0);
+            cr.setReason(s.reason());
+            return cr;
+        }).toList();
+
+        // Soil health assessment
+        String soilHealth;
+        if (ph >= 6 && ph <= 7.5 && n > 40 && p > 30 && k > 30) soilHealth = "Excellent";
+        else if (ph >= 5.5 && ph <= 8 && (n > 30 || p > 20)) soilHealth = "Good";
+        else soilHealth = "Needs Improvement";
+
+        // Dynamic recommendations
+        List<String> recs = new ArrayList<>();
+        if (n < 30) recs.add("Nitrogen is low — apply urea or organic compost");
+        if (p < 20) recs.add("Phosphorus is low — add DAP or bone meal");
+        if (k < 25) recs.add("Potassium is low — use muriate of potash");
+        if (ph < 5.5) recs.add("Soil is too acidic — apply agricultural lime");
+        if (ph > 8) recs.add("Soil is too alkaline — add gypsum or sulfur");
+        recs.add("Practice crop rotation to maintain soil fertility");
+        recs.add("Use organic mulching to retain moisture");
+        if (rain > 200) recs.add("Ensure proper drainage to prevent waterlogging");
 
         AIToolDTO.CropResponse resp = new AIToolDTO.CropResponse();
-        resp.setRecommendedCrops(crops.subList(0, Math.min(3, crops.size())));
+        resp.setRecommendedCrops(crops);
         resp.setSoilHealth(soilHealth);
-        resp.setRecommendations(List.of(
-                "Consider crop rotation for better soil health",
-                "Monitor pH levels regularly",
-                "Use organic fertilizers to maintain soil quality"));
+        resp.setRecommendations(recs);
         return resp;
     }
 
@@ -241,43 +315,152 @@ public class AIToolService {
 
     private AIToolDTO.SoilResponse ruleBasedSoilAnalysis(AIToolDTO.SoilRequest req) {
         Map<String, List<String>> cropsMap = new HashMap<>();
-        cropsMap.put("loamy", List.of("Most vegetables", "Grains", "Fruits"));
-        cropsMap.put("clay", List.of("Rice", "Wheat", "Cabbage"));
-        cropsMap.put("sandy", List.of("Carrots", "Potatoes", "Groundnuts"));
-        cropsMap.put("silt", List.of("Vegetables", "Fruits", "Grasses"));
-        cropsMap.put("peaty", List.of("Berries", "Root vegetables"));
+        cropsMap.put("loamy", List.of("Most vegetables", "Grains", "Fruits", "Pulses"));
+        cropsMap.put("clay", List.of("Rice", "Wheat", "Cabbage", "Sugarcane"));
+        cropsMap.put("sandy", List.of("Carrots", "Potatoes", "Groundnuts", "Watermelon"));
+        cropsMap.put("silt", List.of("Vegetables", "Fruits", "Grasses", "Lettuce"));
+        cropsMap.put("peaty", List.of("Berries", "Root vegetables", "Potatoes"));
+        cropsMap.put("red", List.of("Groundnut", "Millet", "Cotton", "Potato"));
+        cropsMap.put("black", List.of("Cotton", "Soybean", "Wheat", "Sugarcane"));
+        cropsMap.put("laterite", List.of("Cashew", "Rubber", "Tea", "Coffee"));
 
-        int score = 70;
+        int score = 80;
         List<String> issues = new ArrayList<>();
         List<String> recs = new ArrayList<>();
         double ph = req.getSoilPh() != null ? req.getSoilPh() : 7.0;
         double om = req.getOrganicMatter() != null ? req.getOrganicMatter() : 3.0;
+        double n = req.getNitrogen() != null ? req.getNitrogen() : 50;
+        double p = req.getPhosphorus() != null ? req.getPhosphorus() : 40;
+        double k = req.getPotassium() != null ? req.getPotassium() : 40;
+        double ec = req.getEc() != null ? req.getEc() : 1.0;
+        double moisture = req.getMoisture() != null ? req.getMoisture() : 50;
 
-        if (ph < 6) {
-            issues.add("Soil is acidic");
-            recs.add("Add lime to increase pH");
-            score -= 10;
-        } else if (ph > 7.5) {
-            issues.add("Soil is alkaline");
-            recs.add("Add sulfur/organic matter to decrease pH");
-            score -= 10;
-        }
-        if (om < 3) {
-            issues.add("Low organic matter content");
-            recs.add("Incorporate compost and green manure");
+        // pH analysis
+        if (ph < 5.5) {
+            issues.add("Soil is highly acidic (pH " + ph + ")");
+            recs.add("Apply agricultural lime at 2-4 tonnes/hectare to raise pH");
+            recs.add("Add wood ash as an organic pH amendment");
             score -= 15;
+        } else if (ph < 6.0) {
+            issues.add("Soil is slightly acidic (pH " + ph + ")");
+            recs.add("Apply light lime application (1-2 tonnes/hectare)");
+            score -= 8;
+        } else if (ph > 8.0) {
+            issues.add("Soil is highly alkaline (pH " + ph + ")");
+            recs.add("Add elemental sulfur or gypsum to lower pH");
+            recs.add("Incorporate acidic organic materials like pine bark");
+            score -= 15;
+        } else if (ph > 7.5) {
+            issues.add("Soil is mildly alkaline (pH " + ph + ")");
+            recs.add("Add organic matter and compost to buffer pH");
+            score -= 5;
         }
+
+        // Organic matter
+        if (om < 2.0) {
+            issues.add("Very low organic matter (" + om + "%)");
+            recs.add("Apply 5-10 tonnes/hectare of farmyard manure");
+            recs.add("Practice green manuring with dhaincha or sunhemp");
+            score -= 15;
+        } else if (om < 3.0) {
+            issues.add("Low organic matter (" + om + "%)");
+            recs.add("Incorporate compost and crop residues");
+            score -= 8;
+        }
+
+        // Nitrogen
+        if (n < 25) {
+            issues.add("Nitrogen deficiency (N=" + n + " kg/ha)");
+            recs.add("Apply urea (46-0-0) at 50-100 kg/hectare or use organic compost");
+            score -= 12;
+        } else if (n < 40) {
+            issues.add("Moderate nitrogen level (N=" + n + " kg/ha)");
+            recs.add("Consider split application of nitrogen fertilizer");
+            score -= 5;
+        }
+
+        // Phosphorus
+        if (p < 15) {
+            issues.add("Phosphorus deficiency (P=" + p + " kg/ha)");
+            recs.add("Apply DAP or single superphosphate at 40-60 kg/hectare");
+            score -= 12;
+        } else if (p < 30) {
+            issues.add("Moderate phosphorus (P=" + p + " kg/ha)");
+            recs.add("Add bone meal or rock phosphate for gradual release");
+            score -= 5;
+        }
+
+        // Potassium
+        if (k < 20) {
+            issues.add("Potassium deficiency (K=" + k + " kg/ha)");
+            recs.add("Apply muriate of potash (MOP) at 40-60 kg/hectare");
+            score -= 12;
+        } else if (k < 35) {
+            issues.add("Moderate potassium (K=" + k + " kg/ha)");
+            recs.add("Use wood ash or kelp meal as organic potassium source");
+            score -= 5;
+        }
+
+        // EC (salinity)
+        if (ec > 4.0) {
+            issues.add("High salinity (EC=" + ec + " dS/m) — toxic for most crops");
+            recs.add("Apply gypsum and increase irrigation to leach salts");
+            score -= 15;
+        } else if (ec > 2.0) {
+            issues.add("Moderate salinity (EC=" + ec + " dS/m)");
+            recs.add("Choose salt-tolerant crops like barley or cotton");
+            score -= 8;
+        }
+
+        // Moisture
+        if (moisture < 20) {
+            issues.add("Very low soil moisture (" + moisture + "%)");
+            recs.add("Apply mulching and increase irrigation frequency");
+            score -= 10;
+        } else if (moisture > 80) {
+            issues.add("Waterlogged soil (" + moisture + "% moisture)");
+            recs.add("Improve drainage and avoid heavy irrigation");
+            score -= 10;
+        }
+
+        // Previous crop rotation advice
+        if (req.getPreviousCrop() != null && !req.getPreviousCrop().isBlank()) {
+            String prev = req.getPreviousCrop().toLowerCase();
+            if (prev.contains("rice") || prev.contains("wheat")) {
+                recs.add("After " + req.getPreviousCrop() + ", consider planting pulses to replenish nitrogen");
+            } else if (prev.contains("cotton") || prev.contains("sugarcane")) {
+                recs.add("After " + req.getPreviousCrop() + ", plant nitrogen-fixing legumes in rotation");
+            }
+        }
+
         if (issues.isEmpty()) {
-            issues.add("No major issues detected");
-            recs.add("Soil health is good — maintain current practices");
-            recs.add("Continue crop rotation");
+            issues.add("No major issues detected — soil is in good condition");
+            recs.add("Maintain current soil management practices");
+            recs.add("Continue crop rotation and organic amendments");
         }
+
+        // Nutrient levels map
+        Map<String, String> nutrients = new java.util.LinkedHashMap<>();
+        nutrients.put("Nitrogen (N)", n < 25 ? "Low" : n < 50 ? "Medium" : "High");
+        nutrients.put("Phosphorus (P)", p < 15 ? "Low" : p < 40 ? "Medium" : "High");
+        nutrients.put("Potassium (K)", k < 20 ? "Low" : k < 40 ? "Medium" : "High");
+        nutrients.put("Organic Matter", om < 2 ? "Low" : om < 4 ? "Medium" : "High");
+        nutrients.put("pH Level", ph < 6 ? "Acidic" : ph > 7.5 ? "Alkaline" : "Neutral");
+        nutrients.put("EC (Salinity)", ec < 1 ? "Safe" : ec < 2 ? "Moderate" : "High");
+
+        score = Math.max(score, 20);
+        String healthStatus = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Poor";
+
+        String soilKey = req.getSoilType() != null ? req.getSoilType().toLowerCase() : "";
+        List<String> suitable = cropsMap.getOrDefault(soilKey, List.of("Consult local agricultural extension office"));
 
         AIToolDTO.SoilResponse resp = new AIToolDTO.SoilResponse();
-        resp.setScore(Math.max(score, 40));
+        resp.setScore(score);
+        resp.setHealthStatus(healthStatus);
         resp.setIssues(issues);
         resp.setRecommendations(recs);
-        resp.setSuitableCrops(cropsMap.getOrDefault(req.getSoilType(), List.of("Consult agricultural expert")));
+        resp.setSuitableCrops(suitable);
+        resp.setNutrientLevels(nutrients);
         return resp;
     }
 

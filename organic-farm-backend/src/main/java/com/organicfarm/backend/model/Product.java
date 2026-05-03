@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
  * Category enum aligns with the React frontend values.
  */
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_products_category_active", columnList = "category, active"),
+        @Index(name = "idx_products_farmer_id", columnList = "farmer_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

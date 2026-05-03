@@ -1,5 +1,6 @@
 package com.organicfarm.backend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -59,16 +61,19 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(403, "You do not have permission to access this resource"));
     }
 
+    // ── IllegalArgument (bad enum values, etc.) ────────────
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, ex.getMessage()));
+    }
+
     // ── Generic ────────────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest request) {
-        // Log the full stack trace to the backend console for the developer
-        ex.printStackTrace(); 
-        
-        // Return the actual error message to help identify the problem (e.g. Database connection failed)
-        String message = ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred";
+        log.error("Unhandled exception at {}: {}", request.getDescription(false), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(500, message));
+                .body(new ErrorResponse(500, "An unexpected error occurred"));
     }
 
     // ── Error payload records ──────────────────────────────
