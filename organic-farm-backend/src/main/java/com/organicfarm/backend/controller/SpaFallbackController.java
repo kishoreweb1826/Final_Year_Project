@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-public class HealthController {
+public class SpaFallbackController {
 
     @GetMapping("/")
     public ResponseEntity<Map<String, String>> root() {
