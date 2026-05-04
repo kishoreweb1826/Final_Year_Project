@@ -62,7 +62,7 @@ public class SecurityConfig {
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
@@ -73,6 +73,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
+                        // ── Preflight CORS ─────────────────────────────────
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // ── Health / root ──────────────────────────────────
                         .requestMatchers("/").permitAll()
