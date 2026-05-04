@@ -332,7 +332,7 @@ export default function Login() {
                 setMode('farmer-review');
             } else {
                 if (isNetworkError(err)) {
-                    showNotification('Connection failed. Please ensure your backend server (port 8080) is running.', 'danger');
+                    showNotification('Connection failed. The server may be starting up — please try again in 30-60 seconds.', 'danger');
                 } else {
                     showNotification(msg || 'Login failed. Please check your credentials.', 'danger');
                 }
