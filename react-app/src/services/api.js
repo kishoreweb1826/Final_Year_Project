@@ -7,7 +7,7 @@
 
 const getApiBase = () => {
     let url = import.meta.env.VITE_API_URL
-        || (import.meta.env.DEV ? 'http://localhost:8080' : 'https://final-year-project-lthr.onrender.com');
+        || (import.meta.env.DEV ? 'http://localhost:8080' : 'https://final-year-project-2-fp45.onrender.com');
     url = url.replace(/\/+$/, '');
     if (url.endsWith('/api')) return url;
     return `${url}/api`;
