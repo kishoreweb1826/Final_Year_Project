@@ -90,6 +90,7 @@ public class SecurityConfig {
 
                         // ── Admin-only endpoints ─────────────────────────────
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/**").permitAll()
 
                         // ── All other requests require authentication ────────
                         .anyRequest().authenticated())

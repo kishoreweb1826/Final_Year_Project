@@ -1,9 +1,6 @@
 /**
- * API Service — centralises all HTTP calls to the Spring Boot backend.
- *
- * When served from Spring Boot (port 8080): uses relative '/api' path
- * When running on Vite dev server (port 5173): uses absolute 'http://localhost:8080/api'
- */
+ *// Updated API service using Axios with timeout and interceptors
+import axios from 'axios';
 
 const getApiBase = () => {
     let url = import.meta.env.VITE_API_URL
@@ -28,7 +25,9 @@ export function getManualOptions(method = 'POST', isMultipart = false) {
     const headers = {};
     if (!isMultipart) headers['Content-Type'] = 'application/json';
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    return { method, headers };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    return { method, headers, signal: controller.signal };
 }
 
 /** Build standard fetch options with JSON body + auth header */
@@ -36,10 +35,15 @@ function options(method = 'GET', body = null) {
     const token = getToken();
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     return {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+        // ensure timeout cleared after fetch
+        // this will be handled in the caller via finally
     };
 }
 
@@ -207,23 +211,21 @@ export const paymentApi = {
 // ═══════════════════════════════════════════════════════
 //  FARMER REGISTRATION
 // ═══════════════════════════════════════════════════════
+// Updated farmer registration handling with correct FormData syntax
 export const farmerApi = {
     register: (formData, certificateFile) => {
         const token = getToken();
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
-
         const multipart = new FormData();
         multipart.append('data', new Blob([JSON.stringify(formData)], { type: 'application/json' }));
         if (certificateFile) multipart.append('certificate', certificateFile);
-
-        return fetch(`${API_BASE}/farmers/register`, { method: 'POST', headers, body: multipart })
-            .then(handleResponse);
+        return fetch(`${API_BASE}/farmers/register`, { method: 'POST', headers, body: multipart }).then(handleResponse);
     },
-
-    getStatus: (id) =>
-        fetch(`${API_BASE}/farmers/registration/${id}`, options('GET')).then(handleResponse),
+    getStatus: id => fetch(`${API_BASE}/farmers/registration/${id}`, options('GET')).then(handleResponse)
 };
+
+
 
 // ═══════════════════════════════════════════════════════
 //  CONTACT

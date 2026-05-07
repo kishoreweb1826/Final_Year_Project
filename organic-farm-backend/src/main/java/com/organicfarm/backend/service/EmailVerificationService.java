@@ -120,10 +120,13 @@ public class EmailVerificationService {
         // so the DB state is already committed)
         try {
             sendOtpEmail(normalizedEmail, user.getName(), plainOtp);
-        } catch (Exception e) {
+        } catch (jakarta.mail.MessagingException e) {
             log.error("Failed to send OTP email to {}: {}", normalizedEmail, e.getMessage());
-            return new VerificationDTO.MessageResponse(
-                    "Could not send verification email. Please try again later.", false);
+            throw new com.organicfarm.backend.exception.OtpSendException("Failed to send OTP email", e);
+        } catch (Exception e) {
+            // Unexpected exceptions
+            log.error("Unexpected error while sending OTP email to {}: {}", normalizedEmail, e.getMessage());
+            throw new com.organicfarm.backend.exception.OtpSendException("Unexpected error during OTP send", e);
         }
 
         return new VerificationDTO.MessageResponse("Verification code sent to your email.", true);
