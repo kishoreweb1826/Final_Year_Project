@@ -29,39 +29,65 @@ public class AuthService {
     private final FarmerRegistrationRepository farmerRegistrationRepository;
 
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest req) {
+
         String normalizedEmail = req.getEmail().trim().toLowerCase();
+
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(normalizedEmail, req.getPassword()));
+                new UsernamePasswordAuthenticationToken(
+                        normalizedEmail,
+                        req.getPassword()
+                )
+        );
+
         UserDetailsImpl principal = (UserDetailsImpl) auth.getPrincipal();
 
         // Block login for unapproved farmers
         User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
-        
-        if (user.getRole() == User.UserRole.FARMER && !Boolean.TRUE.equals(user.getFarmerApproved())) {
-            String message = "Your farmer application is currently being reviewed by our authorities. " +
-                             "You will be able to login once your certificate is approved. " +
-                             "Please check back later or contact support for more information.";
-            
-            // Check if there is a rejection reason
-            var registration = farmerRegistrationRepository.findByEmail(normalizedEmail);
-            if (registration.isPresent() && registration.get().getStatus() == FarmerRegistration.RegistrationStatus.REJECTED) {
-                message = "Your farmer application was rejected. Reason: " + 
-                          (registration.get().getRejectionReason() != null ? registration.get().getRejectionReason() : "Incomplete documentation") + 
-                          ". Please contact support to resolve this.";
+                .orElseThrow(() ->
+                        new BadCredentialsException("Invalid credentials"));
+
+        if (user.getRole() == User.UserRole.FARMER &&
+                !Boolean.TRUE.equals(user.getFarmerApproved())) {
+
+            String message =
+                    "Your farmer application is currently being reviewed by our authorities. " +
+                            "You will be able to login once your certificate is approved. " +
+                            "Please check back later or contact support for more information.";
+
+            var registration =
+                    farmerRegistrationRepository.findByEmail(normalizedEmail);
+
+            if (registration.isPresent() &&
+                    registration.get().getStatus() ==
+                            FarmerRegistration.RegistrationStatus.REJECTED) {
+
+                message =
+                        "Your farmer application was rejected. Reason: " +
+                                (registration.get().getRejectionReason() != null
+                                        ? registration.get().getRejectionReason()
+                                        : "Incomplete documentation") +
+                                ". Please contact support to resolve this.";
             }
-            
+
             throw new com.organicfarm.backend.exception.BusinessException(message);
         }
 
         String token = jwtUtils.generateToken(auth);
-        return new AuthDTO.AuthResponse(token, principal.getId(), principal.getName(),
-                principal.getEmail(), principal.getRole().name().toLowerCase(),
-                principal.isEmailVerified(), Boolean.TRUE.equals(user.getFarmerApproved()));
+
+        return new AuthDTO.AuthResponse(
+                token,
+                principal.getId(),
+                principal.getName(),
+                principal.getEmail(),
+                principal.getRole().name().toLowerCase(),
+                principal.isEmailVerified(),
+                Boolean.TRUE.equals(user.getFarmerApproved())
+        );
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest req) {
+
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
         }
@@ -69,22 +95,28 @@ public class AuthService {
         String normalizedEmail = req.getEmail().trim().toLowerCase();
 
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new DuplicateResourceException("An account with this email already exists.");
+            throw new DuplicateResourceException(
+                    "An account with this email already exists."
+            );
         }
 
         User.UserRole role;
         boolean isFarmerApproved;
         boolean isEmailVerified;
 
-        // Unique admin registration logic
+        // Admin registration
         if ("admin@organicfarm.com".equalsIgnoreCase(normalizedEmail)) {
+
             role = User.UserRole.ADMIN;
-            isFarmerApproved = true; // Admins don't need farmer approval
-            isEmailVerified = true;  // Fake email doesn't need OTP!
+            isFarmerApproved = true;
+            isEmailVerified = true;
+
         } else {
+
             role = "farmer".equalsIgnoreCase(req.getUserType())
                     ? User.UserRole.FARMER
                     : User.UserRole.CUSTOMER;
+
             isFarmerApproved = (role != User.UserRole.FARMER);
             isEmailVerified = false;
         }
@@ -99,18 +131,48 @@ public class AuthService {
                 .farmerApproved(isFarmerApproved)
                 .build();
 
-        userRepository.save(user);
+        // Save user FIRST
+        user = userRepository.save(user);
 
-        // Auto-send OTP after registration; log error but don't fail registration
-        try {
-            emailVerificationService.sendVerificationOtp(normalizedEmail);
-        } catch (Exception e) {
-            log.warn("Could not auto-send OTP after registration for {}: {}", normalizedEmail, e.getMessage());
+        log.info("User registered successfully: {}", normalizedEmail);
+
+        // Send OTP separately
+        if (!isEmailVerified) {
+
+            try {
+
+                emailVerificationService.sendVerificationOtp(normalizedEmail);
+
+                log.info("OTP auto-send success for {}", normalizedEmail);
+
+            } catch (Exception e) {
+
+                // IMPORTANT:
+                // NEVER rethrow this exception
+                // NEVER fail registration because email failed
+
+                log.error(
+                        "OTP auto-send failed for {} : {}",
+                        normalizedEmail,
+                        e.getMessage()
+                );
+            }
         }
 
-        String token = jwtUtils.generateTokenFromEmail(user.getEmail(), user.getId());
-        return new AuthDTO.AuthResponse(token, user.getId(), user.getName(),
-                user.getEmail(), user.getRole().name().toLowerCase(), false,
-                Boolean.TRUE.equals(user.getFarmerApproved()));
+        String token =
+                jwtUtils.generateTokenFromEmail(
+                        user.getEmail(),
+                        user.getId()
+                );
+
+        return new AuthDTO.AuthResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name().toLowerCase(),
+                user.isEmailVerified(),
+                Boolean.TRUE.equals(user.getFarmerApproved())
+        );
     }
 }
