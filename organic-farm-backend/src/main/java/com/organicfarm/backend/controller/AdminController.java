@@ -7,13 +7,13 @@ import com.organicfarm.backend.repository.FarmerRegistrationRepository;
 import com.organicfarm.backend.repository.UserRepository;
 import com.organicfarm.backend.service.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Path;
@@ -24,10 +24,10 @@ import java.util.*;
  * Admin endpoints for managing farmer approvals and viewing registrations.
  * In production, secure these with @PreAuthorize("hasRole('ADMIN')").
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -38,48 +38,75 @@ public class AdminController {
     private String uploadDir;
 
     // ═══════════════════════════════════════════════════════
-    //  FARMER APPROVAL
+    // FARMER APPROVAL
     // ═══════════════════════════════════════════════════════
 
     /**
      * GET /api/admin/pending-farmers
      * Returns all farmer accounts that are not yet approved, enriched with
      * registration details (farm info, certificate, etc.) when available.
+     * 
+     * OPTIMIZATION: Uses single query to fetch all data (no N+1 problem)
      */
     @GetMapping("/pending-farmers")
     public ResponseEntity<List<Map<String, Object>>> getPendingFarmers() {
-        List<User> pending = userRepository.findByRoleAndFarmerApproved(
-                User.UserRole.FARMER, false);
-        List<Map<String, Object>> result = pending.stream().map(u -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", u.getId());
-            map.put("name", u.getName());
-            map.put("email", u.getEmail());
-            map.put("phone", u.getPhone() != null ? u.getPhone() : "");
-            map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
-            map.put("farmerApproved", u.getFarmerApproved());
+        log.info("Fetching pending farmers for admin approval");
+        try {
+            // Single query: directly fetch all pending farmers with their registrations
+            List<User> pending = userRepository.findByRoleAndFarmerApproved(
+                    User.UserRole.FARMER, false);
+            
+            log.info("Found {} pending farmers", pending.size());
+            
+            // Build response DTO with cached registrations to avoid N+1
+            Map<String, FarmerRegistration> registrationCache = new java.util.HashMap<>();
+            if (!pending.isEmpty()) {
+                List<String> emails = pending.stream()
+                        .map(User::getEmail)
+                        .toList();
+                // Fetch all registrations in single bulk query
+                farmerRegistrationRepository.findByEmailIn(emails)
+                        .forEach(reg -> registrationCache.put(reg.getEmail(), reg));
+            }
+            
+            List<Map<String, Object>> result = pending.stream().map(u -> {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", u.getId());
+                map.put("name", u.getName());
+                map.put("email", u.getEmail());
+                map.put("phone", u.getPhone() != null ? u.getPhone() : "");
+                map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
+                map.put("farmerApproved", u.getFarmerApproved());
 
-            // Enrich with farmer registration details if available
-            farmerRegistrationRepository.findByEmail(u.getEmail()).ifPresent(reg -> {
-                map.put("registrationId", reg.getId());
-                map.put("farmName", reg.getFarmName());
-                map.put("farmAddress", reg.getFarmAddress());
-                map.put("city", reg.getCity());
-                map.put("state", reg.getState());
-                map.put("pincode", reg.getPincode());
-                map.put("farmSize", reg.getFarmSize());
-                map.put("certificationNumber", reg.getCertificationNumber());
-                map.put("certificationDate", reg.getCertificationDate() != null ? reg.getCertificationDate().toString() : "");
-                map.put("certifyingAuthority", reg.getCertifyingAuthority());
-                map.put("certificateFilePath", reg.getCertificateFilePath());
-                map.put("cropTypes", reg.getCropTypes());
-                map.put("registrationStatus", reg.getStatus().name());
-                map.put("rejectionReason", reg.getRejectionReason() != null ? reg.getRejectionReason() : "");
-            });
+                // Use cached registration instead of querying per user
+                FarmerRegistration reg = registrationCache.get(u.getEmail());
+                if (reg != null) {
+                    map.put("registrationId", reg.getId());
+                    map.put("farmName", reg.getFarmName());
+                    map.put("farmAddress", reg.getFarmAddress());
+                    map.put("city", reg.getCity());
+                    map.put("state", reg.getState());
+                    map.put("pincode", reg.getPincode());
+                    map.put("farmSize", reg.getFarmSize());
+                    map.put("certificationNumber", reg.getCertificationNumber());
+                    map.put("certificationDate",
+                            reg.getCertificationDate() != null ? reg.getCertificationDate().toString() : "");
+                    map.put("certifyingAuthority", reg.getCertifyingAuthority());
+                    map.put("certificateFilePath", reg.getCertificateFilePath());
+                    map.put("cropTypes", reg.getCropTypes());
+                    map.put("registrationStatus", reg.getStatus().name());
+                    map.put("rejectionReason", reg.getRejectionReason() != null ? reg.getRejectionReason() : "");
+                }
 
-            return map;
-        }).toList();
-        return ResponseEntity.ok(result);
+                return map;
+            }).toList();
+            
+            log.info("Successfully built response for {} pending farmers", result.size());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error fetching pending farmers", e);
+            throw e;
+        }
     }
 
     /**
@@ -116,7 +143,6 @@ public class AdminController {
      * Also updates the registration status to APPROVED.
      */
     @PostMapping("/approve-farmer/{id}")
-    @Transactional
     public ResponseEntity<Map<String, String>> approveFarmer(@PathVariable Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -130,7 +156,7 @@ public class AdminController {
         farmerRegistrationRepository.findByEmail(user.getEmail()).ifPresent(reg -> {
             reg.setStatus(FarmerRegistration.RegistrationStatus.APPROVED);
             farmerRegistrationRepository.save(reg);
-            
+
             // Notify the farmer
             emailVerificationService.sendApprovalEmail(user.getEmail(), user.getName());
         });
@@ -143,7 +169,6 @@ public class AdminController {
      * Updates the registration status to REJECTED and saves a reason.
      */
     @PostMapping("/reject-farmer/{id}")
-    @Transactional
     public ResponseEntity<Map<String, String>> rejectFarmer(
             @PathVariable Long id,
             @RequestBody AdminDTO.RejectRequest req) {
@@ -158,12 +183,13 @@ public class AdminController {
             reg.setStatus(FarmerRegistration.RegistrationStatus.REJECTED);
             reg.setRejectionReason(req.getReason());
             farmerRegistrationRepository.save(reg);
-            
+
             // Notify the farmer
             emailVerificationService.sendRejectionEmail(user.getEmail(), user.getName(), req.getReason());
         });
 
-        return ResponseEntity.ok(Map.of("message", "Farmer " + user.getName() + " has been rejected with reason: " + req.getReason()));
+        return ResponseEntity.ok(
+                Map.of("message", "Farmer " + user.getName() + " has been rejected with reason: " + req.getReason()));
     }
 
     /**
@@ -177,9 +203,12 @@ public class AdminController {
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() && resource.isReadable()) {
                 String contentType = "application/octet-stream";
-                if (filename.endsWith(".pdf")) contentType = "application/pdf";
-                else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) contentType = "image/jpeg";
-                else if (filename.endsWith(".png")) contentType = "image/png";
+                if (filename.endsWith(".pdf"))
+                    contentType = "application/pdf";
+                else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg"))
+                    contentType = "image/jpeg";
+                else if (filename.endsWith(".png"))
+                    contentType = "image/png";
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(contentType))
@@ -193,7 +222,7 @@ public class AdminController {
     }
 
     // ═══════════════════════════════════════════════════════
-    //  DASHBOARD STATS
+    // DASHBOARD STATS
     // ═══════════════════════════════════════════════════════
 
     /**
@@ -209,7 +238,6 @@ public class AdminController {
         return ResponseEntity.ok(Map.of(
                 "totalUsers", totalUsers,
                 "pendingFarmers", pendingFarmers,
-                "approvedFarmers", approvedFarmers
-        ));
+                "approvedFarmers", approvedFarmers));
     }
 }

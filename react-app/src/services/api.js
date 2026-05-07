@@ -12,11 +12,47 @@ const getApiBase = () => {
 
 export const API_BASE = getApiBase();
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRODUCTION CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
 
+// Production timeout: 60 seconds for Render cold starts
+const DEFAULT_TIMEOUT = 60000; // 60 seconds for production
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // Start with 1 second, exponential backoff
 
 /** Get the stored JWT token from localStorage or sessionStorage */
 export function getToken() {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
+/**
+ * Retry logic with exponential backoff
+ * Handles network failures and timeouts gracefully
+ */
+async function retryFetch(url, options, retries = 0) {
+    try {
+        const response = await fetch(url, options);
+        
+        // If response is not OK and retryable (5xx or network), retry
+        if (!response.ok && response.status >= 500 && retries < MAX_RETRIES) {
+            const delay = RETRY_DELAY * Math.pow(2, retries); // Exponential backoff: 1s, 2s, 4s
+            console.warn(`Retry attempt ${retries + 1}/${MAX_RETRIES} after ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return retryFetch(url, { ...options }, retries + 1);
+        }
+        
+        return response;
+    } catch (error) {
+        // Network timeout or abort error - retry if we haven't exceeded max retries
+        if (retries < MAX_RETRIES && (error.name === 'AbortError' || error.message.includes('Failed to fetch'))) {
+            const delay = RETRY_DELAY * Math.pow(2, retries);
+            console.warn(`Network error, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return retryFetch(url, { ...options }, retries + 1);
+        }
+        throw error;
+    }
 }
 
 /** Get fetch options for manual calls (handling auth header) */
@@ -26,8 +62,13 @@ export function getManualOptions(method = 'POST', isMultipart = false) {
     if (!isMultipart) headers['Content-Type'] = 'application/json';
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    return { method, headers, signal: controller.signal };
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+    return { 
+        method, 
+        headers, 
+        signal: controller.signal,
+        __timeout: timeout // Store for cleanup
+    };
 }
 
 /** Build standard fetch options with JSON body + auth header */
@@ -36,14 +77,13 @@ function options(method = 'GET', body = null) {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
     return {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
-        // ensure timeout cleared after fetch
-        // this will be handled in the caller via finally
+        __timeout: timeout
     };
 }
 
@@ -64,7 +104,33 @@ async function handleResponse(res) {
 /** Error check for network failures (Backend Offline) */
 export function isNetworkError(err) {
     const msg = String(err.message || err).toLowerCase();
-    return msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed');
+    return msg.includes('failed to fetch') 
+        || msg.includes('networkerror') 
+        || msg.includes('load failed')
+        || msg.includes('abort')
+        || msg.includes('timeout');
+}
+
+/**
+ * Wrap fetch with retry logic and comprehensive error handling
+ */
+async function fetchWithRetry(url, opts) {
+    try {
+        const response = await retryFetch(url, opts);
+        if (opts.__timeout) clearTimeout(opts.__timeout);
+        return await handleResponse(response);
+    } catch (error) {
+        if (opts.__timeout) clearTimeout(opts.__timeout);
+        
+        // Provide helpful error messages for common failures
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout. The server may be starting. Please try again.');
+        }
+        if (isNetworkError(error)) {
+            throw new Error('Connection failed. Please check your internet connection or try again later.');
+        }
+        throw error;
+    }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -72,13 +138,12 @@ export function isNetworkError(err) {
 // ═══════════════════════════════════════════════════════
 export const authApi = {
     login: (email, password, rememberMe = false) =>
-        fetch(`${API_BASE}/auth/login`, options('POST', { email: email.trim().toLowerCase(), password, rememberMe }))
-            .then(handleResponse),
+        fetchWithRetry(`${API_BASE}/auth/login`, options('POST', { email: email.trim().toLowerCase(), password, rememberMe })),
 
     register: (name, email, phone, password, confirmPassword, userType) =>
-        fetch(`${API_BASE}/auth/register`, options('POST', {
+        fetchWithRetry(`${API_BASE}/auth/register`, options('POST', {
             name, email: email.trim().toLowerCase(), phone, password, confirmPassword, userType
-        })).then(handleResponse),
+        })),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -87,23 +152,19 @@ export const authApi = {
 export const verificationApi = {
     /** Send OTP to an email (also used as resend) */
     send: (email) =>
-        fetch(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
-            .then(handleResponse),
+        fetchWithRetry(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() })),
 
     /** Alias for send — semantically clearer on the resend button */
     resend: (email) =>
-        fetch(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() }))
-            .then(handleResponse),
+        fetchWithRetry(`${API_BASE}/verification/send`, options('POST', { email: email.trim().toLowerCase() })),
 
     /** Verify the user-entered OTP */
     verify: (email, otp) =>
-        fetch(`${API_BASE}/verification/verify`, options('POST', { email: email.trim().toLowerCase(), otp }))
-            .then(handleResponse),
+        fetchWithRetry(`${API_BASE}/verification/verify`, options('POST', { email: email.trim().toLowerCase(), otp })),
 
     /** Get verification status for an email */
     status: (email) =>
-        fetch(`${API_BASE}/verification/status?email=${encodeURIComponent(email.trim().toLowerCase())}`, options('GET'))
-            .then(handleResponse),
+        fetchWithRetry(`${API_BASE}/verification/status?email=${encodeURIComponent(email.trim().toLowerCase())}`, options('GET')),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -240,16 +301,16 @@ export const contactApi = {
 // ═══════════════════════════════════════════════════════
 export const aiApi = {
     cropRecommendation: (data) =>
-        fetch(`${API_BASE}/ai-tools/crop-recommendation`, options('POST', data)).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/ai-tools/crop-recommendation`, options('POST', data)),
 
     resourceManagement: (data) =>
-        fetch(`${API_BASE}/ai-tools/resource-management`, options('POST', data)).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/ai-tools/resource-management`, options('POST', data)),
 
     weatherForecast: (location) =>
-        fetch(`${API_BASE}/ai-tools/weather-forecast`, options('POST', { location })).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/ai-tools/weather-forecast`, options('POST', { location })),
 
     soilAnalysis: (data) =>
-        fetch(`${API_BASE}/ai-tools/soil-analysis`, options('POST', data)).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/ai-tools/soil-analysis`, options('POST', data)),
 };
 
 // ═══════════════════════════════════════════════════════
@@ -258,23 +319,23 @@ export const aiApi = {
 export const adminApi = {
     /** Get all pending farmer registrations with enriched details */
     getPendingFarmers: () =>
-        fetch(`${API_BASE}/admin/pending-farmers`, options('GET')).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/admin/pending-farmers`, options('GET')),
 
     /** Get all farmers (approved + pending) */
     getAllFarmers: () =>
-        fetch(`${API_BASE}/admin/all-farmers`, options('GET')).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/admin/all-farmers`, options('GET')),
 
     /** Approve a farmer by user ID */
     approveFarmer: (userId) =>
-        fetch(`${API_BASE}/admin/approve-farmer/${userId}`, options('POST')).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/admin/approve-farmer/${userId}`, options('POST')),
 
     /** Reject a farmer by user ID with a reason */
     rejectFarmer: (userId, reason) =>
-        fetch(`${API_BASE}/admin/reject-farmer/${userId}`, options('POST', { reason })).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/admin/reject-farmer/${userId}`, options('POST', { reason })),
 
     /** Get admin dashboard stats */
     getStats: () =>
-        fetch(`${API_BASE}/admin/stats`, options('GET')).then(handleResponse),
+        fetchWithRetry(`${API_BASE}/admin/stats`, options('GET')),
 
     /** Get certificate file URL for viewing */
     getCertificateUrl: (filename) =>

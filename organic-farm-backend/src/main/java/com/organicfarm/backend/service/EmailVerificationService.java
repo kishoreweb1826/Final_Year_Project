@@ -276,22 +276,37 @@ public class EmailVerificationService {
     }
 
     private void sendOtpEmail(String toEmail, String userName, String otp) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
         try {
-            helper.setFrom(fromEmail, fromName);
-        } catch (java.io.UnsupportedEncodingException e) {
-            helper.setFrom(fromEmail);
+            log.debug("Preparing OTP email for: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            try {
+                helper.setFrom(fromEmail, fromName);
+            } catch (java.io.UnsupportedEncodingException e) {
+                log.warn("Could not set sender name, using email only");
+                helper.setFrom(fromEmail);
+            }
+            
+            helper.setTo(toEmail);
+            helper.setSubject("Your OrganicFarm Verification Code: " + otp);
+            String html = buildEmailHtml(userName, otp);
+            helper.setText(html, true);
+
+            log.debug("Sending OTP email via {} to {}", fromEmail, toEmail);
+            mailSender.send(message);
+            log.info("✓ OTP email successfully sent to {}", toEmail);
+            
+        } catch (jakarta.mail.AuthenticationFailedException e) {
+            log.error("SMTP Authentication failed - check MAIL_USERNAME and MAIL_PASSWORD: {}", e.getMessage());
+            throw new MessagingException("SMTP authentication failed. Please verify email credentials.", e);
+        } catch (jakarta.mail.SendFailedException e) {
+            log.error("Email send failed for {}: {}", toEmail, e.getMessage());
+            throw new MessagingException("Failed to send email to " + toEmail, e);
+        } catch (jakarta.mail.MessagingException e) {
+            log.error("Messaging error while sending OTP to {}: {}", toEmail, e.getMessage(), e);
+            throw e;
         }
-        helper.setTo(toEmail);
-        helper.setSubject("Your OrganicFarm Verification Code: " + otp);
-
-        String html = buildEmailHtml(userName, otp);
-        helper.setText(html, true);
-
-        mailSender.send(message);
-        log.info("OTP email sent to {}", toEmail);
     }
 
     private String buildEmailHtml(String name, String otp) {

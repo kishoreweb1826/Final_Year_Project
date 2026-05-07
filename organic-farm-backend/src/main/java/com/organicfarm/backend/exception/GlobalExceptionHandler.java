@@ -54,6 +54,18 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(401, "Invalid email or password"));
     }
 
+    // ── OTP Send Failure ───────────────────────────────────
+    @ExceptionHandler(OtpSendException.class)
+    public ResponseEntity<ErrorResponse> handleOtpSendException(OtpSendException ex, WebRequest request) {
+        log.error("OTP send failed at {}: {}", request.getDescription(false), ex.getMessage(), ex.getCause());
+        String userMessage = "Failed to send verification email. Please check your email address and try again, or contact support.";
+        if (ex.getCause() instanceof jakarta.mail.AuthenticationFailedException) {
+            userMessage = "Email service temporarily unavailable. Please try again in a few moments.";
+        }
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, userMessage));
+    }
+
     // ── Authorization ──────────────────────────────────────
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {

@@ -1,6 +1,7 @@
 package com.organicfarm.backend.security;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.web.cors.*;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -54,15 +56,25 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split(",")));
+        
+        // Parse comma-separated origins and trim whitespace
+        String[] origins = allowedOrigins.split(",");
+        List<String> parsedOrigins = java.util.Arrays.stream(origins)
+                .map(String::trim)
+                .toList();
+        
+        // Set allowed origin patterns for wildcard support
+        config.setAllowedOriginPatterns(parsedOrigins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(Arrays.asList("X-Total-Count", "X-Total-Pages"));
+        config.setExposedHeaders(Arrays.asList("X-Total-Count", "X-Total-Pages", "X-Error-Message"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+        
+        log.info("CORS configured with origins: {}", String.join(", ", parsedOrigins));
         return source;
     }
 
