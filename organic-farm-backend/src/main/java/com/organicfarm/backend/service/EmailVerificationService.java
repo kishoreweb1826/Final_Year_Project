@@ -202,7 +202,7 @@ public class EmailVerificationService {
             helper.setFrom(fromEmail, fromName);
             helper.setTo(toEmail);
             helper.setSubject("Congratulations! Your Farmer account is Approved 🌿");
-            
+
             String html = """
                 <div style="font-family:Arial,sans-serif;padding:20px;color:#333;">
                     <h2 style="color:#2d6a4f;">Welcome to OrganicFarm!</h2>
@@ -230,7 +230,7 @@ public class EmailVerificationService {
             helper.setFrom(fromEmail, fromName);
             helper.setTo(toEmail);
             helper.setSubject("Update on your Farmer Registration 🌿");
-            
+
             String html = """
                 <div style="font-family:Arial,sans-serif;padding:20px;color:#333;">
                     <h2 style="color:#dc3545;">Update on your Registration</h2>
@@ -276,37 +276,83 @@ public class EmailVerificationService {
     }
 
     private void sendOtpEmail(String toEmail, String userName, String otp) throws MessagingException {
+
+        log.info("========== OTP EMAIL PROCESS STARTED ==========");
+        log.info("Recipient: {}", toEmail);
+
         try {
-            log.debug("Preparing OTP email for: {}", toEmail);
+
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
 
             try {
                 helper.setFrom(fromEmail, fromName);
             } catch (java.io.UnsupportedEncodingException e) {
-                log.warn("Could not set sender name, using email only");
+
+                log.warn("Sender name encoding failed. Using email only.");
+
                 helper.setFrom(fromEmail);
             }
-            
+
             helper.setTo(toEmail);
+
             helper.setSubject("Your OrganicFarm Verification Code: " + otp);
+
             String html = buildEmailHtml(userName, otp);
+
             helper.setText(html, true);
 
-            log.debug("Sending OTP email via {} to {}", fromEmail, toEmail);
+            log.info("About to send OTP email...");
+            log.info("SMTP Host: {}", fromEmail);
+
+            // THIS IS THE MAIN SMTP CALL
             mailSender.send(message);
-            log.info("✓ OTP email successfully sent to {}", toEmail);
-            
+
+            log.info("✅ OTP EMAIL SENT SUCCESSFULLY TO {}", toEmail);
+
         } catch (jakarta.mail.AuthenticationFailedException e) {
-            log.error("SMTP Authentication failed - check MAIL_USERNAME and MAIL_PASSWORD: {}", e.getMessage());
-            throw new MessagingException("SMTP authentication failed. Please verify email credentials.", e);
+
+            log.error("❌ SMTP AUTHENTICATION FAILED");
+            log.error("Check MAIL_USERNAME and MAIL_PASSWORD");
+            log.error("Error: {}", e.getMessage(), e);
+
+            throw new MessagingException(
+                    "SMTP authentication failed.",
+                    e
+            );
+
         } catch (jakarta.mail.SendFailedException e) {
-            log.error("Email send failed for {}: {}", toEmail, e.getMessage());
-            throw new MessagingException("Failed to send email to " + toEmail, e);
+
+            log.error("❌ EMAIL SEND FAILED");
+            log.error("Recipient: {}", toEmail);
+            log.error("Error: {}", e.getMessage(), e);
+
+            throw new MessagingException(
+                    "Failed to send email.",
+                    e
+            );
+
         } catch (jakarta.mail.MessagingException e) {
-            log.error("Messaging error while sending OTP to {}: {}", toEmail, e.getMessage(), e);
+
+            log.error("❌ MAIL MESSAGING ERROR");
+            log.error("Error: {}", e.getMessage(), e);
+
             throw e;
+
+        } catch (Exception e) {
+
+            log.error("❌ UNEXPECTED EMAIL ERROR");
+            log.error("Error: {}", e.getMessage(), e);
+
+            throw new MessagingException(
+                    "Unexpected email sending error.",
+                    e
+            );
         }
+
+        log.info("========== OTP EMAIL PROCESS FINISHED ==========");
     }
 
     private String buildEmailHtml(String name, String otp) {
