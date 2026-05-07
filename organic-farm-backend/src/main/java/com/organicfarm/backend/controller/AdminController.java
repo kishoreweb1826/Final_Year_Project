@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Path;
@@ -26,6 +27,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -114,6 +116,7 @@ public class AdminController {
      * Also updates the registration status to APPROVED.
      */
     @PostMapping("/approve-farmer/{id}")
+    @Transactional
     public ResponseEntity<Map<String, String>> approveFarmer(@PathVariable Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -140,6 +143,7 @@ public class AdminController {
      * Updates the registration status to REJECTED and saves a reason.
      */
     @PostMapping("/reject-farmer/{id}")
+    @Transactional
     public ResponseEntity<Map<String, String>> rejectFarmer(
             @PathVariable Long id,
             @RequestBody AdminDTO.RejectRequest req) {
