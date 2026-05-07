@@ -58,6 +58,7 @@ public class AuthDTO {
         private String role;
         private boolean emailVerified;
         private boolean farmerApproved;
+        private boolean otpSent = true;
 
         public AuthResponse(String token, Long id, String name, String email,
                             String role, boolean emailVerified, boolean farmerApproved) {

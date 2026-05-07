@@ -18,7 +18,6 @@ COPY --from=build /app/target/organic-farm-backend-1.0.0.jar app.jar
 RUN mkdir -p ./uploads/certificates && chown -R appuser:appuser /app
 
 USER appuser
-EXPOSE 8080
 
 ENTRYPOINT ["java", \
   "-XX:MaxRAMPercentage=75.0", \

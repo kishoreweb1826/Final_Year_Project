@@ -68,7 +68,7 @@ export function AppProvider({ children }) {
     const login = useCallback((userData, remember = false) => {
         const storage = remember ? localStorage : sessionStorage;
         storage.setItem('user', JSON.stringify(userData));
-        storage.setItem('authToken', userData.token);
+        if (userData.token) storage.setItem('authToken', userData.token);
         setUser(userData);
     }, []);
 

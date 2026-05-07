@@ -67,7 +67,8 @@ export function getManualOptions(method = 'POST', isMultipart = false) {
         method, 
         headers, 
         signal: controller.signal,
-        __timeout: timeout // Store for cleanup
+        __timeout: timeout,
+        credentials: 'omit'
     };
 }
 
@@ -83,7 +84,8 @@ function options(method = 'GET', body = null) {
         headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
-        __timeout: timeout
+        __timeout: timeout,
+        credentials: 'omit'
     };
 }
 
@@ -97,6 +99,10 @@ async function handleResponse(res) {
     try {
         const err = await res.json();
         errorMsg = err.message || errorMsg;
+        if (err.errors && typeof err.errors === 'object') {
+            const fieldMessages = Object.values(err.errors).join('. ');
+            if (fieldMessages) errorMsg = fieldMessages;
+        }
     } catch { /* ignore parse errors */ }
     throw new Error(errorMsg);
 }
@@ -122,12 +128,11 @@ async function fetchWithRetry(url, opts) {
     } catch (error) {
         if (opts.__timeout) clearTimeout(opts.__timeout);
         
-        // Provide helpful error messages for common failures
         if (error.name === 'AbortError') {
-            throw new Error('Request timeout. The server may be starting. Please try again.');
+            throw new Error('Request timeout. The server may be starting up — please try again in 30-60 seconds.');
         }
         if (isNetworkError(error)) {
-            throw new Error('Connection failed. Please check your internet connection or try again later.');
+            throw new Error('Connection failed. Please check your internet connection. If the server is on Render free tier, it may need 30-60s to wake up.');
         }
         throw error;
     }
@@ -272,16 +277,13 @@ export const paymentApi = {
 // ═══════════════════════════════════════════════════════
 //  FARMER REGISTRATION
 // ═══════════════════════════════════════════════════════
-// Updated farmer registration handling with correct FormData syntax
 export const farmerApi = {
     register: (formData, certificateFile) => {
-        const token = getToken();
         const headers = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
         const multipart = new FormData();
         multipart.append('data', new Blob([JSON.stringify(formData)], { type: 'application/json' }));
         if (certificateFile) multipart.append('certificate', certificateFile);
-        return fetch(`${API_BASE}/farmers/register`, { method: 'POST', headers, body: multipart }).then(handleResponse);
+        return fetch(`${API_BASE}/farmers/register`, { method: 'POST', headers, body: multipart, credentials: 'omit' }).then(handleResponse);
     },
     getStatus: id => fetch(`${API_BASE}/farmers/registration/${id}`, options('GET')).then(handleResponse)
 };

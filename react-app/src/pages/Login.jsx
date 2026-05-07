@@ -371,10 +371,9 @@ export default function Login() {
         if (!agreeTerms) { showNotification('Please accept terms & conditions', 'warning'); return; }
         setLoading(true);
         try {
-            // Step 1: Create the user account
-            await authApi.register(name, email, phone, password, confirmPassword, userType);
+            const regResponse = await authApi.register(name, email, phone, password, confirmPassword, userType);
+            const normalizedEmail = email.trim().toLowerCase();
 
-            // Step 2: If farmer, submit certification application simultaneously
             if (userType === 'farmer') {
                 const nameParts = name.trim().split(' ');
                 const firstName = nameParts[0];
@@ -383,7 +382,7 @@ export default function Login() {
                     await farmerApi.register({
                         firstName,
                         lastName,
-                        email: email.trim().toLowerCase(),
+                        email: normalizedEmail,
                         phone,
                         farmName: regForm.farmName,
                         farmAddress: regForm.farmAddress,
@@ -400,12 +399,15 @@ export default function Login() {
                     console.warn('Farmer certification submission error:', farmerErr);
                     showNotification('Account created! Certification will need to be resubmitted.', 'warning');
                 }
-                // Show farmer review pending screen
-                showNotification('🌾 Farmer account created! Your certificate is now under review.', 'success');
+                showNotification('? Farmer account created! Your certificate is now under review.', 'success');
                 setMode('farmer-review');
             } else {
-                setPendingEmail(email.trim().toLowerCase());
-                showNotification('Account created! A verification code was sent to your email.', 'success');
+                setPendingEmail(normalizedEmail);
+                if (regResponse?.otpSent === false) {
+                    showNotification('Account created! However, we could not send the verification email. Please try resending the code.', 'warning');
+                } else {
+                    showNotification('Account created! A verification code was sent to your email.', 'success');
+                }
                 setMode('verify');
             }
         } catch (err) {
@@ -416,7 +418,6 @@ export default function Login() {
     };
 
     const handleVerified = () => {
-        // After OTP success — redirect to login so user logs in properly
         showNotification('Email verified! Please log in now.', 'success');
         setLoginForm(prev => ({ ...prev, email: pendingEmail }));
         setMode('login');

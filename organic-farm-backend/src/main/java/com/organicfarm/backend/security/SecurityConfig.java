@@ -57,14 +57,30 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         
-        // Parse comma-separated origins and trim whitespace
         String[] origins = allowedOrigins.split(",");
         List<String> parsedOrigins = java.util.Arrays.stream(origins)
                 .map(String::trim)
+                .filter(s -> !s.isEmpty())
                 .toList();
         
-        // Set allowed origin patterns for wildcard support
-        config.setAllowedOriginPatterns(parsedOrigins);
+        List<String> exactOrigins = new java.util.ArrayList<>();
+        List<String> patterns = new java.util.ArrayList<>();
+        
+        for (String origin : parsedOrigins) {
+            if (origin.contains("*")) {
+                patterns.add(origin);
+            } else {
+                exactOrigins.add(origin);
+            }
+        }
+        
+        if (!exactOrigins.isEmpty()) {
+            config.setAllowedOrigins(exactOrigins);
+        }
+        if (!patterns.isEmpty()) {
+            config.setAllowedOriginPatterns(patterns);
+        }
+        
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(Arrays.asList("X-Total-Count", "X-Total-Pages", "X-Error-Message"));

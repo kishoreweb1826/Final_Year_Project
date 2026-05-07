@@ -85,7 +85,7 @@ public class AuthService {
         );
     }
 
-    @Transactional(noRollbackFor = Exception.class)
+    @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest req) {
 
         if (!req.getPassword().equals(req.getConfirmPassword())) {
@@ -104,7 +104,6 @@ public class AuthService {
         boolean isFarmerApproved;
         boolean isEmailVerified;
 
-        // Admin registration
         if ("admin@organicfarm.com".equalsIgnoreCase(normalizedEmail)) {
 
             role = User.UserRole.ADMIN;
@@ -131,41 +130,30 @@ public class AuthService {
                 .farmerApproved(isFarmerApproved)
                 .build();
 
-        // Save user FIRST
         user = userRepository.save(user);
 
         log.info("User registered successfully: {}", normalizedEmail);
 
-        // Send OTP separately
+        boolean otpSent = true;
         if (!isEmailVerified) {
-
             try {
-
                 emailVerificationService.sendVerificationOtp(normalizedEmail);
-
                 log.info("OTP auto-send success for {}", normalizedEmail);
-
             } catch (Exception e) {
-
-                // IMPORTANT:
-                // NEVER rethrow this exception
-                // NEVER fail registration because email failed
-
-                log.error(
-                        "OTP auto-send failed for {} : {}",
-                        normalizedEmail,
-                        e.getMessage()
-                );
+                log.error("OTP auto-send failed for {} : {}", normalizedEmail, e.getMessage());
+                otpSent = false;
             }
         }
 
-        String token =
-                jwtUtils.generateTokenFromEmail(
-                        user.getEmail(),
-                        user.getId()
-                );
+        String token;
+        try {
+            token = jwtUtils.generateTokenFromEmail(user.getEmail(), user.getId());
+        } catch (Exception e) {
+            log.error("JWT generation failed for {}: {}", normalizedEmail, e.getMessage());
+            throw new RuntimeException("Failed to generate authentication token. Please try logging in.", e);
+        }
 
-        return new AuthDTO.AuthResponse(
+        AuthDTO.AuthResponse response = new AuthDTO.AuthResponse(
                 token,
                 user.getId(),
                 user.getName(),
@@ -174,5 +162,7 @@ public class AuthService {
                 user.isEmailVerified(),
                 Boolean.TRUE.equals(user.getFarmerApproved())
         );
+        response.setOtpSent(otpSent);
+        return response;
     }
 }
